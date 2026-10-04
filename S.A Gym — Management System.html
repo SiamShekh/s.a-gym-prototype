@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S.A Gym — Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050505;
+  --sidebar:#080808;
+  --card:#0f0f0f;
+  --card2:#141414;
+  --border:#1c1c1c;
+  --red:#ff0000;
+  --red-dim:rgba(255,0,0,0.08);
+  --red-med:rgba(255,0,0,0.15);
+  --red-glow:rgba(255,0,0,0.3);
+  --white:#ffffff;
+  --gray:#6b6b6b;
+  --light:#a0a0a0;
+}
+html{color-scheme:dark}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--white);display:flex;min-height:100vh;overflow-x:hidden;line-height:1.45}
+img{max-width:100%;display:block}
+
+/* ICONS */
+.icon{width:1em;height:1em;display:inline-block;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.icon-s{width:14px;height:14px}
+.icon-m{width:18px;height:18px}
+.icon-l{width:22px;height:22px}
+.icon-xl{width:28px;height:28px}
+
+/* SIDEBAR */
+.sidebar{width:240px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform 0.3s}
+.sidebar-logo{padding:20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.logo-img{width:42px;height:42px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 8px rgba(255,0,0,0.25))}
+.logo-txt{font-size:15px;font-weight:800;color:var(--white);letter-spacing:-0.3px}
+.logo-sub{font-size:11px;color:var(--gray);font-family:'Hind Siliguri',sans-serif;margin-top:1px}
+nav{flex:1;padding:12px 8px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--light);transition:all 0.2s;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif}
+.nav-item:hover{background:rgba(255,255,255,0.04);color:var(--white)}
+.nav-item.active{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,0,0,0.18)}
+.nav-icon{display:flex;align-items:center;justify-content:center}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700}
+.sidebar-footer{padding:12px 8px;border-top:1px solid var(--border)}
+.owner-row{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:var(--card)}
+.owner-av{width:32px;height:32px;background:var(--red-dim);border:1px solid rgba(255,0,0,0.25);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--red);flex-shrink:0}
+.owner-name{font-size:12px;font-weight:600;color:var(--white)}
+.owner-role{font-size:10px;color:var(--gray)}
+
+/* MAIN */
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--sidebar);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-title{font-size:16px;font-weight:700;color:var(--white);display:flex;align-items:center;gap:8px}
+.page-title .icon{color:var(--red)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{background:var(--red);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 0 16px rgba(255,0,0,0.2)}
+.topbar-btn:hover{background:#cc0000;box-shadow:0 0 22px rgba(255,0,0,0.32)}
+.topbar-date{font-size:12px;color:var(--gray);font-weight:500}
+.content{padding:24px;flex:1}
+
+/* PAGES */
+.page{display:none}.page.active{display:block}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;right:0;width:60px;height:60px;border-radius:50%;opacity:0.08;transform:translate(20px,-20px)}
+.stat-card.red::before{background:var(--red)}
+.stat-card.white::before{background:#fff}
+.stat-card.gray::before{background:var(--gray)}
+.stat-icon{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;margin-bottom:12px;background:var(--red-dim);color:var(--red);border:1px solid rgba(255,0,0,0.12)}
+.stat-card.white .stat-icon{background:rgba(255,255,255,0.06);color:#fff;border-color:rgba(255,255,255,0.1)}
+.stat-card.gray .stat-icon{background:rgba(255,255,255,0.04);color:var(--gray);border-color:rgba(255,255,255,0.06)}
+.stat-val{font-size:28px;font-weight:700;line-height:1;margin-bottom:4px;color:var(--white)}
+.stat-card.red .stat-val{color:var(--red)}
+.stat-card.white .stat-val{color:#fff}
+.stat-card.gray .stat-val{color:var(--gray)}
+.stat-label{font-size:12px;color:var(--gray);font-weight:500}
+.stat-change{font-size:11px;color:var(--red);margin-top:6px;font-weight:600}
+.stat-change.white{color:#fff;opacity:0.8}
+.stat-change.gray{color:var(--gray)}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:700;color:var(--white);display:flex;align-items:center;gap:8px}
+.card-title .icon{color:var(--red)}
+.card-action{font-size:12px;color:var(--red);cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;font-weight:600;display:flex;align-items:center;gap:4px;transition:opacity 0.2s}
+.card-action:hover{opacity:0.8}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;color:var(--gray);font-weight:600;padding:10px 14px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)}
+td{padding:12px 14px;font-size:13px;color:var(--white);border-bottom:1px solid rgba(255,255,255,0.03)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;gap:5px}
+.badge-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,0,0,0.2)}
+.badge-white{background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.15)}
+.badge-gray{background:rgba(255,255,255,0.04);color:var(--gray);border:1px solid rgba(255,255,255,0.08)}
+.action-btns{display:flex;gap:6px}
+.btn-sm{padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:5px;transition:all 0.2s}
+.btn-edit{background:rgba(255,255,255,0.06);color:#fff}
+.btn-edit:hover{background:rgba(255,255,255,0.1)}
+.btn-del{background:var(--red-dim);color:var(--red)}
+.btn-del:hover{background:rgba(255,0,0,0.15)}
+.btn-pay{background:rgba(255,255,255,0.06);color:#fff}
+.btn-pay:hover{background:rgba(255,255,255,0.12)}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+/* PROGRESS BAR */
+.progress-wrap{margin-top:8px}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--gray);margin-bottom:6px;font-weight:500}
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--red);border-radius:3px;transition:width 0.5s}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.6)}
+.modal-head{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:16px;font-weight:700;color:var(--white)}
+.modal-close{background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;padding:4px;border-radius:6px;transition:all 0.2s}
+.modal-close:hover{color:var(--white);background:rgba(255,255,255,0.06)}
+.modal-body{padding:24px}
+.modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+
+/* FORM */
+.form-group{margin-bottom:16px}
+label{display:block;font-size:12px;color:var(--gray);margin-bottom:6px;font-weight:500}
+input,select,textarea{width:100%;background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--white);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s}
+input:focus,select:focus,textarea:focus{border-color:rgba(255,0,0,0.45)}
+select option{background:#111}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn-primary{background:var(--red);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;box-shadow:0 0 16px rgba(255,0,0,0.18)}
+.btn-primary:hover{background:#cc0000;box-shadow:0 0 24px rgba(255,0,0,0.28)}
+.btn-secondary{background:var(--card2);color:var(--light);border:1px solid var(--border);padding:10px 20px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s}
+.btn-secondary:hover{border-color:rgba(255,255,255,0.18);color:#fff}
+
+/* PAYMENT METHODS */
+.payment-methods{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.pay-method{background:var(--card2);border:2px solid var(--border);border-radius:12px;padding:14px;text-align:center;cursor:pointer;transition:all 0.2s}
+.pay-method:hover,.pay-method.selected{border-color:var(--red);background:var(--red-dim)}
+.pay-method .pm-icon{font-size:28px;margin-bottom:6px;display:flex;align-items:center;justify-content:center;color:var(--light)}
+.pay-method.selected .pm-icon{color:var(--red)}
+.pay-method .pm-name{font-size:12px;font-weight:700;color:#fff}
+.pay-method .pm-color{font-size:10px;color:var(--gray)}
+.pay-input-wrap{display:none}
+.pay-input-wrap.show{display:block}
+.pay-amount-display{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;margin-bottom:16px}
+.pay-amount-display .amount{font-size:32px;font-weight:700;color:var(--red)}
+.pay-amount-display .for{font-size:12px;color:var(--gray)}
+
+/* NOTIFY PAGE */
+.notify-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.notify-avatar{width:42px;height:42px;background:var(--red-dim);border:1px solid rgba(255,0,0,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--red);flex-shrink:0}
+.notify-info{flex:1}
+.notify-name{font-size:14px;font-weight:600;margin-bottom:3px;color:#fff}
+.notify-detail{font-size:12px;color:var(--gray)}
+.notify-days{font-size:12px;font-weight:700;margin-top:3px}
+.notify-days.urgent{color:var(--red)}
+.notify-days.warning{color:#fff}
+.notify-days.soon{color:var(--gray)}
+.notify-btn-wrap{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+
+/* MINI LIST */
+.mini-list{display:flex;flex-direction:column;gap:8px}
+.mini-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card2);border-radius:8px}
+.mini-av{width:32px;height:32px;background:var(--red-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--red);flex-shrink:0}
+.mini-name{font-size:13px;font-weight:600;flex:1;color:#fff}
+.mini-amt{font-size:13px;font-weight:700;color:var(--red)}
+.mini-date{font-size:11px;color:var(--gray)}
+
+/* CHART */
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:120px;padding-bottom:4px}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar{width:100%;background:var(--red-dim);border:1px solid rgba(255,0,0,0.18);border-radius:4px 4px 0 0;transition:height 0.5s;cursor:pointer;position:relative}
+.bar:hover{background:var(--red-glow)}
+.bar-label{font-size:9px;color:var(--gray);text-align:center;font-weight:500}
+.bar-val{font-size:9px;color:var(--red);text-align:center;font-weight:600}
+
+/* PLAN PILLS */
+.plan-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.plan-pill{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:none;color:var(--light);font-family:'Inter',sans-serif;transition:all 0.2s;display:inline-flex;align-items:center;gap:5px}
+.plan-pill.active,.plan-pill:hover{background:var(--red-dim);color:var(--red);border-color:rgba(255,0,0,0.25)}
+
+/* SEARCH */
+.search-wrap{position:relative;margin-bottom:16px}
+.search-wrap input{padding-left:38px}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray);display:flex;align-items:center;justify-content:center}
+
+/* MOBILE */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .payment-methods{grid-template-columns:1fr 1fr}
+  .hamburger{display:flex!important}
+}
+.hamburger{display:none;background:none;border:none;color:var(--white);cursor:pointer;margin-right:8px;padding:4px;border-radius:6px;transition:background 0.2s}
+.hamburger:hover{background:rgba(255,255,255,0.06)}
+.overlay-mob{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99}
+.overlay-mob.show{display:block}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:48px 20px;color:var(--gray)}
+.empty-icon{font-size:48px;margin-bottom:12px;opacity:0.25;display:flex;align-items:center;justify-content:center;color:#fff}
+
+/* ALERT BANNER */
+.alert-banner{background:linear-gradient(135deg,var(--red-dim),rgba(20,20,20,0.4));border:1px solid rgba(255,0,0,0.18);border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.alert-banner-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.alert-banner-desc{font-size:12px;color:var(--gray)}
+</style>
+</head>
+<body>
+
+<!-- MOBILE OVERLAY -->
+<div class="overlay-mob" id="mobOverlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <img src="sa-gym-logo.png" alt="S.A Gym Logo" class="logo-img">
+    <div>
+      <div class="logo-txt">S.A GYM</div>
+      <div class="logo-sub">ম্যানেজমেন্ট সিস্টেম</div>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-item active" onclick="showPage('overview')">
+      <span class="nav-icon icon-m"><i data-lucide="layout-dashboard" class="icon" aria-hidden="true"></i></span> Overview
+    </button>
+    <button class="nav-item" onclick="showPage('members')">
+      <span class="nav-icon icon-m"><i data-lucide="users" class="icon" aria-hidden="true"></i></span> Members
+    </button>
+    <button class="nav-item" onclick="showPage('billing')">
+      <span class="nav-icon icon-m"><i data-lucide="credit-card" class="icon" aria-hidden="true"></i></span> Billing
+    </button>
+    <button class="nav-item" onclick="showPage('notifications')">
+      <span class="nav-icon icon-m"><i data-lucide="bell" class="icon" aria-hidden="true"></i></span> Notifications
+      <span class="nav-badge" id="notif-badge">0</span>
+    </button>
+    <button class="nav-item" onclick="showPage('payment')">
+      <span class="nav-icon icon-m"><i data-lucide="wallet" class="icon" aria-hidden="true"></i></span> Payment
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="owner-row">
+      <div class="owner-av"><i data-lucide="user" class="icon icon-m" aria-hidden="true"></i></div>
+      <div>
+        <div class="owner-name">Sohag Biswas</div>
+        <div class="owner-role">Owner / Admin</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
+        <i data-lucide="menu" class="icon icon-l" aria-hidden="true"></i>
+      </button>
+      <div class="page-title" id="pageTitle"><i data-lucide="layout-dashboard" class="icon icon-m" aria-hidden="true"></i> Overview</div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-date" id="todayDate"></div>
+      <button class="topbar-btn" onclick="openAddMember()">
+        <i data-lucide="plus" class="icon icon-m" aria-hidden="true"></i> নতুন সদস্য
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ===== OVERVIEW PAGE ===== -->
+    <div class="page active" id="page-overview">
+      <div class="stats-grid">
+        <div class="stat-card red">
+          <div class="stat-icon"><i data-lucide="banknote" class="icon icon-xl" aria-hidden="true"></i></div>
+          <div class="stat-val" id="ov-revenue">৳০</div>
+          <div class="stat-label">এই মাসের আয়</div>
+          <div class="stat-change" id="ov-rev-change">↑ লোড হচ্ছে...</div>
+        </div>
+        <div class="stat-card white">
+          <div class="stat-icon"><i data-lucide="users" class="icon icon-xl" aria-hidden="true"></i></div>
+          <div class="stat-val" id="ov-members">০</div>
+          <div class="stat-label">মোট সদস্য</div>
+          <div class="stat-change white" id="ov-active">০ জন সক্রিয়</div>
+        </div>
+        <div class="stat-card gray">
+          <div class="stat-icon"><i data-lucide="alert-triangle" class="icon icon-xl" aria-hidden="true"></i></div>
+          <div class="stat-val" id="ov-expiring">০</div>
+          <div class="stat-label">মেয়াদ শেষ হচ্ছে</div>
+          <div class="stat-change gray">আগামী ৭ দিনে</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon"><i data-lucide="x-circle" class="icon icon-xl" aria-hidden="true"></i></div>
+          <div class="stat-val" id="ov-expired">০</div>
+          <div class="stat-label">মেয়াদ শেষ</div>
+          <div class="stat-change">পেমেন্ট বাকি</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="trending-up" class="icon icon-m" aria-hidden="true"></i> মাসিক আয় (৬ মাস)</div>
+          </div>
+          <div class="bar-chart" id="revenueChart"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="award" class="icon icon-m" aria-hidden="true"></i> প্যাকেজ বিতরণ</div>
+          </div>
+          <div id="planStats"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="user-plus" class="icon icon-m" aria-hidden="true"></i> সাম্প্রতিক সদস্য</div>
+            <button class="card-action" onclick="showPage('members')">সব দেখো <i data-lucide="chevron-right" class="icon icon-s" aria-hidden="true"></i></button>
+          </div>
+          <div class="mini-list" id="recentMembers"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="alert-triangle" class="icon icon-m" aria-hidden="true"></i> মেয়াদ শেষ হচ্ছে</div>
+            <button class="card-action" onclick="showPage('notifications')">নোটিফাই করো <i data-lucide="chevron-right" class="icon icon-s" aria-hidden="true"></i></button>
+          </div>
+          <div class="mini-list" id="expiringPreview"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MEMBERS PAGE ===== -->
+    <div class="page" id="page-members">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="plan-row" id="filterPills">
+            <button class="plan-pill active" onclick="filterMembers('all',this)">সকল</button>
+            <button class="plan-pill" onclick="filterMembers('active',this)">সক্রিয় <i data-lucide="check" class="icon icon-s" aria-hidden="true"></i></button>
+            <button class="plan-pill" onclick="filterMembers('expiring',this)">শেষ হচ্ছে <i data-lucide="alert-triangle" class="icon icon-s" aria-hidden="true"></i></button>
+            <button class="plan-pill" onclick="filterMembers('expired',this)">মেয়াদ শেষ <i data-lucide="x" class="icon icon-s" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <button class="topbar-btn" onclick="openAddMember()">
+          <i data-lucide="plus" class="icon icon-m" aria-hidden="true"></i> নতুন সদস্য
+        </button>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon"><i data-lucide="search" class="icon icon-m" aria-hidden="true"></i></span>
+        <input type="text" placeholder="নাম বা ফোন দিয়ে খুঁজুন..." id="memberSearch" oninput="renderMembersTable()">
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>নাম</th>
+                <th>ফোন</th>
+                <th>যোগদান</th>
+                <th>মেয়াদ শেষ</th>
+                <th>প্যাকেজ</th>
+                <th>পরিমাণ</th>
+                <th>স্ট্যাটাস</th>
+                <th>একশন</th>
+              </tr>
+            </thead>
+            <tbody id="membersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== BILLING PAGE ===== -->
+    <div class="page" id="page-billing">
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card white">
+          <div class="stat-icon"><i data-lucide="check-circle" class="icon icon-xl" aria-hidden="true"></i></div>
+          <div class="stat-val" id="bill-paid">৳০</div>
+          <div class="stat-label">পরিশোধিত</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon"><i data-lucide="clock" class="icon icon-xl" aria-hidden="true"></i></div>
+          <div class="stat-val" id="bill-due">৳০</div>
+          <div class="stat-label">বকেয়া</div>
+        </div>
+        <div class="stat-card gray">
+          <div class="stat-icon"><i data-lucide="credit-card" class="icon icon-xl" aria-hidden="true"></i></div>
+          <div class="stat-val" id="bill-total">৳০</div>
+          <div class="stat-label">মোট</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="card-header" style="padding:16px 20px;border-bottom:1px solid var(--border)">
+          <div class="card-title"><i data-lucide="credit-card" class="icon icon-m" aria-hidden="true"></i> পেমেন্ট ইতিহাস ও বকেয়া</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>সদস্য</th>
+                <th>প্যাকেজ</th>
+                <th>পরিমাণ</th>
+                <th>মেয়াদ শেষ</th>
+                <th>স্ট্যাটাস</th>
+                <th>একশন</th>
+              </tr>
+            </thead>
+            <tbody id="billingTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== NOTIFICATIONS PAGE ===== -->
+    <div class="page" id="page-notifications">
+      <div class="alert-banner">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+          <div>
+            <div class="alert-banner-title"><i data-lucide="bell" class="icon icon-m" aria-hidden="true"></i> সাবস্ক্রিপশন মেয়াদ সতর্কতা</div>
+            <div class="alert-banner-desc">যাদের মেয়াদ শেষ হতে চলেছে তাদের নোটিফাই করুন</div>
+          </div>
+          <button class="btn-primary" onclick="notifyAll()" style="white-space:nowrap">
+            <i data-lucide="megaphone" class="icon icon-m" aria-hidden="true"></i> সবাইকে নোটিফাই
+          </button>
+        </div>
+      </div>
+      <div id="notifList"></div>
+    </div>
+
+    <!-- ===== PAYMENT PAGE ===== -->
+    <div class="page" id="page-payment">
+      <div class="card" style="max-width:500px;margin:0 auto">
+        <div class="card-title" style="margin-bottom:20px;font-size:16px"><i data-lucide="wallet" class="icon icon-m" aria-hidden="true"></i> পেমেন্ট গ্রহণ করুন</div>
+        <div class="form-group">
+          <label>সদস্য নির্বাচন করুন</label>
+          <select id="pay-member-select" onchange="updatePayAmount()">
+            <option value="">— সদস্য বাছুন —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>প্যাকেজ</label>
+          <select id="pay-plan" onchange="updatePayAmount()">
+            <option value="30:500">৩০ দিন — ৳৫০০</option>
+            <option value="60:900">৬০ দিন — ৳৯০০</option>
+            <option value="90:1200">৯০ দিন — ৳১২০০</option>
+          </select>
+        </div>
+        <div class="pay-amount-display">
+          <div class="for" id="pay-for">সদস্য নির্বাচন করুন</div>
+          <div class="amount" id="pay-amount-show">৳৫০০</div>
+        </div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">পেমেন্ট পদ্ধতি বেছে নিন</div>
+        <div class="payment-methods">
+          <div class="pay-method" onclick="selectPayMethod(this,'bkash')">
+            <div class="pm-icon"><i data-lucide="smartphone" class="icon icon-xl" aria-hidden="true"></i></div>
+            <div class="pm-name">bKash</div>
+            <div class="pm-color" style="color:#e2136e">মোবাইল ব্যাংকিং</div>
+          </div>
+          <div class="pay-method" onclick="selectPayMethod(this,'nagad')">
+            <div class="pm-icon"><i data-lucide="credit-card" class="icon icon-xl" aria-hidden="true"></i></div>
+            <div class="pm-name">Nagad</div>
+            <div class="pm-color" style="color:#f7941d">মোবাইল ব্যাংকিং</div>
+          </div>
+          <div class="pay-method" onclick="selectPayMethod(this,'rocket')">
+            <div class="pm-icon"><i data-lucide="rocket" class="icon icon-xl" aria-hidden="true"></i></div>
+            <div class="pm-name">Rocket</div>
+            <div class="pm-color" style="color:#8b5cf6">DBBL</div>
+          </div>
+          <div class="pay-method" onclick="selectPayMethod(this,'upay')">
+            <div class="pm-icon"><i data-lucide="arrow-up-circle" class="icon icon-xl" aria-hidden="true"></i></div>
+            <div class="pm-name">Upay</div>
+            <div class="pm-color" style="color:#00a651">UCB</div>
+          </div>
+          <div class="pay-method" onclick="selectPayMethod(this,'cash')">
+            <div class="pm-icon"><i data-lucide="banknote" class="icon icon-xl" aria-hidden="true"></i></div>
+            <div class="pm-name">নগদ টাকা</div>
+            <div class="pm-color">Cash</div>
+          </div>
+          <div class="pay-method" onclick="selectPayMethod(this,'bank')">
+            <div class="pm-icon"><i data-lucide="landmark" class="icon icon-xl" aria-hidden="true"></i></div>
+            <div class="pm-name">ব্যাংক</div>
+            <div class="pm-color">Transfer</div>
+          </div>
+        </div>
+        <div class="pay-input-wrap" id="pay-input-section">
+          <div class="form-group">
+            <label id="pay-number-label">bKash নম্বর</label>
+            <input type="text" id="pay-number" placeholder="01XXXXXXXXX">
+          </div>
+          <div class="form-group">
+            <label>ট্রানজেকশন ID</label>
+            <input type="text" id="pay-txn" placeholder="TXN ID (ঐচ্ছিক)">
+          </div>
+        </div>
+        <button class="btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px" onclick="processPayment()">
+          <i data-lucide="check" class="icon icon-m" aria-hidden="true"></i> পেমেন্ট নিশ্চিত করুন
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ADD/EDIT MEMBER MODAL -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">নতুন সদস্য যোগ করুন</div>
+      <button class="modal-close" onclick="closeModal()">
+        <i data-lucide="x" class="icon icon-m" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editMemberId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>পূর্ণ নাম *</label>
+          <input type="text" id="m-name" placeholder="যেমন: রাহুল ইসলাম">
+        </div>
+        <div class="form-group">
+          <label>ফোন নম্বর *</label>
+          <input type="text" id="m-phone" placeholder="01XXXXXXXXX">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>বয়স</label>
+          <input type="number" id="m-age" placeholder="বছর">
+        </div>
+        <div class="form-group">
+          <label>লিঙ্গ</label>
+          <select id="m-gender">
+            <option value="পুরুষ">পুরুষ</option>
+            <option value="মহিলা">মহিলা</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>যোগদানের তারিখ *</label>
+          <input type="date" id="m-join" onchange="calcExpiry()">
+        </div>
+        <div class="form-group">
+          <label>প্যাকেজ *</label>
+          <select id="m-plan" onchange="calcExpiry()">
+            <option value="30:500">৩০ দিন — ৳৫০০</option>
+            <option value="60:900">৬০ দিন — ৳৯০০</option>
+            <option value="90:1200">৯০ দিন — ৳১২০০</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>মেয়াদ শেষের তারিখ</label>
+          <input type="date" id="m-expiry" readonly style="opacity:0.6">
+        </div>
+        <div class="form-group">
+          <label>পরিশোধের পরিমাণ (৳)</label>
+          <input type="number" id="m-amount" placeholder="৳">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>ঠিকানা</label>
+        <input type="text" id="m-address" placeholder="গ্রাম/এলাকা">
+      </div>
+      <div class="form-group">
+        <label>নোট</label>
+        <textarea id="m-note" rows="2" placeholder="যেকোনো বিশেষ তথ্য..."></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" onclick="closeModal()">বাতিল</button>
+      <button class="btn-primary" onclick="saveMember()">
+        <i data-lucide="check" class="icon icon-m" aria-hidden="true"></i> সদস্য সংরক্ষণ করুন
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS TOAST -->
+<div id="toast" style="position:fixed;bottom:24px;right:24px;background:#111;border:1px solid var(--red);border-radius:10px;padding:14px 20px;font-size:13px;color:#fff;z-index:999;transform:translateY(80px);opacity:0;transition:all 0.3s;max-width:300px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 30px rgba(255,0,0,0.15)">
+  <span id="toast-icon"></span>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ===== ICON HELPER =====
+const ic=(name,cls='icon-m')=>`<i data-lucide="${name}" class="icon ${cls}" aria-hidden="true"></i>`;
+
+// ===== DATA =====
+let members = [
+  {id:1, name:'রাহুল ইসলাম', phone:'01712345678', age:24, gender:'পুরুষ', join:'2026-09-01', expiry:'2026-10-01', plan:'30:500', amount:500, address:'সুজানগর', note:'', paid:true},
+  {id:2, name:'তানভীর আহমেদ', phone:'01812345678', age:28, gender:'পুরুষ', join:'2026-09-10', expiry:'2026-10-10', plan:'30:500', amount:500, address:'পাবনা', note:'', paid:true},
+  {id:3, name:'সজীব হোসেন', phone:'01912345678', age:22, gender:'পুরুষ', join:'2026-08-05', expiry:'2026-11-03', plan:'90:1200', amount:1200, address:'সুজানগর', note:'', paid:true},
+  {id:4, name:'মিম আক্তার', phone:'01612345678', age:20, gender:'মহিলা', join:'2026-09-15', expiry:'2026-11-14', plan:'60:900', amount:900, address:'পাবনা', note:'', paid:true},
+  {id:5, name:'রফিক উদ্দিন', phone:'01512345678', age:35, gender:'পুরুষ', join:'2026-08-01', expiry:'2026-09-30', plan:'60:900', amount:900, address:'সুজানগর', note:'', paid:false},
+];
+
+let nextId = 6;
+let editingId = null;
+let activeFilter = 'all';
+let selectedPayMethod = null;
+
+// ===== HELPERS =====
+const today = () => new Date().toISOString().split('T')[0];
+const fmt = d => { if(!d) return '—'; const x=new Date(d); return x.getFullYear()+'/'+(x.getMonth()+1).toString().padStart(2,'0')+'/'+x.getDate().toString().padStart(2,'0'); };
+const daysLeft = d => { const diff = new Date(d) - new Date(today()); return Math.ceil(diff/(1000*60*60*24)); };
+const statusOf = m => {
+  const d = daysLeft(m.expiry);
+  if(d < 0) return {label:'মেয়াদ শেষ', cls:'badge-red', key:'expired'};
+  if(d <= 3) return {label:'জরুরি! '+d+' দিন', cls:'badge-red', key:'expiring'};
+  if(d <= 7) return {label:d+' দিন বাকি', cls:'badge-white', key:'expiring'};
+  return {label:'সক্রিয়', cls:'badge-red', key:'active'};
+};
+const planLabel = p => ({'30:500':'৩০ দিন','60:900':'৬০ দিন','90:1200':'৯০ দিন'}[p]||p);
+const planAmt = p => parseInt((p||'').split(':')[1]||0);
+const toast = (msg,ok=true) => {
+  const t=document.getElementById('toast');
+  document.getElementById('toast-icon').innerHTML=ic(ok?'check':'x','icon-m');
+  document.getElementById('toast-msg').textContent=msg;
+  t.style.transform='translateY(0)';t.style.opacity='1';
+  setTimeout(()=>{t.style.transform='translateY(80px)';t.style.opacity='0';},3000);
+};
+
+// ===== TODAY DATE =====
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('bn-BD',{year:'numeric',month:'long',day:'numeric'});
+
+// Set default join date
+document.getElementById('m-join').value = today();
+calcExpiry();
+
+// ===== PAGES =====
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const titles={
+    overview:ic('dashboard','icon-m')+' Overview',
+    members:ic('users','icon-m')+' Members',
+    billing:ic('credit-card','icon-m')+' Billing',
+    notifications:ic('bell','icon-m')+' Notifications',
+    payment:ic('wallet','icon-m')+' Payment'
+  };
+  document.getElementById('pageTitle').innerHTML=titles[id];
+  // Mark matching nav item active
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    const on=n.getAttribute('onclick')||'';
+    if(on.includes("'"+id+"'") || on.includes('"'+id+'"')) n.classList.add('active');
+  });
+  if(id==='overview'){renderOverview();lucide.createIcons();}
+  if(id==='members'){renderMembersTable();lucide.createIcons();}
+  if(id==='billing'){renderBilling();lucide.createIcons();}
+  if(id==='notifications'){renderNotifications();lucide.createIcons();}
+  if(id==='payment'){renderPaymentSelect();lucide.createIcons();}
+  closeSidebar();
+}
+
+// ===== SIDEBAR MOBILE =====
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('mobOverlay').classList.toggle('show');}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mobOverlay').classList.remove('show');}
+
+// ===== OVERVIEW =====
+function renderOverview(){
+  const total = members.length;
+  const active = members.filter(m=>statusOf(m).key==='active').length;
+  const expiring = members.filter(m=>statusOf(m).key==='expiring').length;
+  const expired = members.filter(m=>statusOf(m).key==='expired').length;
+  const revenue = members.filter(m=>m.paid).reduce((s,m)=>s+m.amount,0);
+
+  document.getElementById('ov-revenue').textContent='৳'+revenue.toLocaleString();
+  document.getElementById('ov-members').textContent=total;
+  document.getElementById('ov-active').textContent=active+' জন সক্রিয়';
+  document.getElementById('ov-expiring').textContent=expiring;
+  document.getElementById('ov-expired').textContent=expired;
+  document.getElementById('ov-rev-change').textContent='↑ '+total+' সদস্যের মোট আয়';
+
+  // Revenue bar chart (mock 6 months)
+  const months=['মে','জুন','জুলাই','আগস্ট','সেপ্ট','অক্টো'];
+  const vals=[3200,4500,3800,5200,4100,revenue];
+  const max=Math.max(...vals);
+  const chart=document.getElementById('revenueChart');
+  chart.innerHTML=vals.map((v,i)=>`
+    <div class="bar-wrap">
+      <div class="bar-val">৳${(v/1000).toFixed(1)}k</div>
+      <div class="bar" style="height:${Math.round((v/max)*90)+10}px" title="${months[i]}: ৳${v}"></div>
+      <div class="bar-label">${months[i]}</div>
+    </div>`).join('');
+
+  // Plan stats
+  const p30=members.filter(m=>m.plan==='30:500').length;
+  const p60=members.filter(m=>m.plan==='60:900').length;
+  const p90=members.filter(m=>m.plan==='90:1200').length;
+  document.getElementById('planStats').innerHTML=`
+    <div class="progress-wrap"><div class="progress-label"><span>৩০ দিন প্যাকেজ</span><span>${p30} জন</span></div><div class="progress-bar"><div class="progress-fill" style="width:${total?Math.round(p30/total*100):0}%;background:var(--red);opacity:1"></div></div></div>
+    <div class="progress-wrap" style="margin-top:14px"><div class="progress-label"><span>৬০ দিন প্যাকেজ</span><span>${p60} জন</span></div><div class="progress-bar"><div class="progress-fill" style="width:${total?Math.round(p60/total*100):0}%;background:#fff;opacity:0.85"></div></div></div>
+    <div class="progress-wrap" style="margin-top:14px"><div class="progress-label"><span>৯০ দিন প্যাকেজ</span><span>${p90} জন</span></div><div class="progress-bar"><div class="progress-fill" style="width:${total?Math.round(p90/total*100):0}%;background:var(--gray);opacity:0.9"></div></div></div>
+    <div style="margin-top:20px;display:flex;gap:16px;font-size:12px;color:var(--gray)">
+      <span>মোট প্যাকেজ বিক্রয়: <strong style="color:#fff">${total}</strong></span>
+    </div>`;
+
+  // Recent members
+  const recent=[...members].sort((a,b)=>new Date(b.join)-new Date(a.join)).slice(0,4);
+  document.getElementById('recentMembers').innerHTML=recent.map(m=>`
+    <div class="mini-item">
+      <div class="mini-av">${ic('user','icon-m')}</div>
+      <div><div class="mini-name">${m.name}</div><div class="mini-date">${fmt(m.join)}</div></div>
+      <div class="mini-amt">৳${m.amount}</div>
+    </div>`).join('');
+
+  // Expiring preview
+  const exp=members.filter(m=>{ const d=daysLeft(m.expiry); return d>=0&&d<=7; }).slice(0,4);
+  document.getElementById('expiringPreview').innerHTML=exp.length?exp.map(m=>`
+    <div class="mini-item">
+      <div class="mini-av">${ic('alert-triangle','icon-m')}</div>
+      <div><div class="mini-name">${m.name}</div><div class="mini-date">${daysLeft(m.expiry)} দিন বাকি</div></div>
+      <span class="badge badge-white">শেষ হচ্ছে</span>
+    </div>`).join(''):`<div class="empty-state"><div class="empty-icon">${ic('check-circle','icon-xl')}</div><div>কেউ শেষ হচ্ছে না</div></div>`;
+
+  // Notif badge
+  const notifCount=members.filter(m=>{ const d=daysLeft(m.expiry); return d>=0&&d<=7; }).length;
+  document.getElementById('notif-badge').textContent=notifCount;
+}
+
+// ===== MEMBERS TABLE =====
+function renderMembersTable(){
+  const search=(document.getElementById('memberSearch').value||'').toLowerCase();
+  let list=members.filter(m=>{
+    const q=m.name.toLowerCase()+m.phone;
+    if(!q.includes(search)) return false;
+    if(activeFilter==='all') return true;
+    return statusOf(m).key===activeFilter;
+  });
+  const body=document.getElementById('membersTableBody');
+  if(!list.length){body.innerHTML=`<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">${ic('users','icon-xl')}</div><div>কোনো সদস্য নেই</div></div></td></tr>`;return;}
+  body.innerHTML=list.map((m,i)=>{
+    const st=statusOf(m);
+    return `<tr>
+      <td style="color:var(--gray)">${i+1}</td>
+      <td><strong style="color:#fff">${m.name}</strong>${m.address?'<br><span style="font-size:10px;color:var(--gray)">'+m.address+'</span>':''}</td>
+      <td>${m.phone}</td>
+      <td>${fmt(m.join)}</td>
+      <td>${fmt(m.expiry)}</td>
+      <td><span style="font-size:12px;color:#fff">${planLabel(m.plan)}</span></td>
+      <td style="color:var(--red);font-weight:700">৳${m.amount}</td>
+      <td><span class="badge ${st.cls}">${st.label}</span></td>
+      <td><div class="action-btns">
+        <button class="btn-sm btn-edit" onclick="editMember(${m.id})" title="এডিট">${ic('pencil','icon-s')}</button>
+        <button class="btn-sm btn-del" onclick="deleteMember(${m.id})" title="মুছুন">${ic('trash-2','icon-s')}</button>
+        ${st.key==='expired'?`<button class="btn-sm btn-pay" onclick="quickPay(${m.id})" title="পেমেন্ট নিন">${ic('credit-card','icon-s')}</button>`:''}
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterMembers(f,el){
+  activeFilter=f;
+  document.querySelectorAll('.plan-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  renderMembersTable();
+}
+
+// ===== BILLING =====
+function renderBilling(){
+  const paid=members.filter(m=>m.paid).reduce((s,m)=>s+m.amount,0);
+  const due=members.filter(m=>!m.paid||statusOf(m).key==='expired').reduce((s,m)=>s+planAmt(m.plan),0);
+  document.getElementById('bill-paid').textContent='৳'+paid.toLocaleString();
+  document.getElementById('bill-due').textContent='৳'+due.toLocaleString();
+  document.getElementById('bill-total').textContent='৳'+(paid+due).toLocaleString();
+  const body=document.getElementById('billingTableBody');
+  body.innerHTML=members.map(m=>{
+    const st=statusOf(m);
+    const isPaid=m.paid&&st.key!=='expired';
+    return `<tr>
+      <td><strong style="color:#fff">${m.name}</strong><br><span style="font-size:10px;color:var(--gray)">${m.phone}</span></td>
+      <td>${planLabel(m.plan)}</td>
+      <td style="font-weight:700;color:${isPaid?'#fff':'var(--red)'}">৳${m.amount}</td>
+      <td>${fmt(m.expiry)}</td>
+      <td><span class="badge ${isPaid?'badge-red':'badge-white'}">${isPaid?'পরিশোধিত':'বকেয়া'}</span></td>
+      <td>${!isPaid?`<button class="btn-sm btn-pay" onclick="quickPay(${m.id})">${ic('credit-card','icon-s')} পেমেন্ট নিন</button>`:''}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== NOTIFICATIONS =====
+function renderNotifications(){
+  const urgent=members.filter(m=>{ const d=daysLeft(m.expiry); return d>=0&&d<=1; });
+  const warn=members.filter(m=>{ const d=daysLeft(m.expiry); return d>=2&&d<=3; });
+  const soon=members.filter(m=>{ const d=daysLeft(m.expiry); return d>=4&&d<=7; });
+  const expired=members.filter(m=>daysLeft(m.expiry)<0);
+  let html='';
+  const section=(title,list,cls)=>{
+    if(!list.length) return '';
+    return `<div style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;margin-top:16px;font-weight:600">${title}</div>`+
+    list.map(m=>`
+      <div class="notify-card">
+        <div class="notify-avatar">${ic('user','icon-m')}</div>
+        <div class="notify-info">
+          <div class="notify-name">${m.name}</div>
+          <div class="notify-detail">${m.phone} · ${planLabel(m.plan)}</div>
+          <div class="notify-days ${cls}">${daysLeft(m.expiry)<0?'মেয়াদ শেষ হয়ে গেছে!':daysLeft(m.expiry)+' দিন বাকি'}</div>
+        </div>
+        <div class="notify-btn-wrap">
+          <button class="btn-sm btn-notify" onclick="sendNotif(${m.id},this)">${ic('message-circle','icon-s')} Notify</button>
+          <button class="btn-sm btn-pay" onclick="quickPay(${m.id})">${ic('credit-card','icon-s')} Pay</button>
+        </div>
+      </div>`).join('');
+  };
+  html+=section('● আজই শেষ (জরুরি)',urgent,'urgent');
+  html+=section('● ২-৩ দিন বাকি',warn,'warning');
+  html+=section('● ৪-৭ দিন বাকি',soon,'soon');
+  html+=section('● মেয়াদ শেষ — রিনিউ করুন',expired,'urgent');
+  if(!html) html=`<div class="empty-state"><div class="empty-icon">${ic('check-circle','icon-xl')}</div><div>সবার সাবস্ক্রিপশন ঠিক আছে!</div></div>`;
+  document.getElementById('notifList').innerHTML=html;
+}
+
+function sendNotif(id,btn){
+  const m=members.find(x=>x.id===id);
+  if(!m) return;
+  const d=daysLeft(m.expiry);
+  const msg=d<0
+    ?`আপনার S.A Gym সদস্যপদের মেয়াদ শেষ হয়ে গেছে। রিনিউ করতে কল করুন: 01746-933966`
+    :`আপনার S.A Gym সদস্যপদের মেয়াদ ${d} দিনের মধ্যে শেষ হবে। রিনিউ করুন: 01746-933966`;
+  window.open(`https://wa.me/88${m.phone.replace(/^0/,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+  btn.innerHTML=ic('check','icon-s')+' Sent';btn.style.background='var(--red-dim)';btn.style.color='var(--red)';
+  lucide.createIcons();
+  toast(m.name+'-কে WhatsApp নোটিফিকেশন পাঠানো হয়েছে');
+}
+
+function notifyAll(){
+  const list=members.filter(m=>{ const d=daysLeft(m.expiry); return d<=7; });
+  if(!list.length){toast('সবার সদস্যপদ ঠিক আছে!',true);return;}
+  list.forEach(m=>{
+    const d=daysLeft(m.expiry);
+    const msg=d<0?`আপনার S.A Gym সদস্যপদের মেয়াদ শেষ। রিনিউ: 01746-933966`
+      :`S.A Gym: আপনার সদস্যপদ ${d} দিনে শেষ হবে। রিনিউ: 01746-933966`;
+    setTimeout(()=>window.open(`https://wa.me/88${m.phone.replace(/^0/,'')}?text=${encodeURIComponent(msg)}`,'_blank'),300);
+  });
+  toast(list.length+' জনকে WhatsApp নোটিফিকেশন পাঠানো হচ্ছে');
+}
+
+// ===== ADD/EDIT MEMBER =====
+function openAddMember(){
+  editingId=null;
+  document.getElementById('modalTitle').textContent='নতুন সদস্য যোগ করুন';
+  document.getElementById('editMemberId').value='';
+  document.getElementById('m-name').value='';
+  document.getElementById('m-phone').value='';
+  document.getElementById('m-age').value='';
+  document.getElementById('m-gender').value='পুরুষ';
+  document.getElementById('m-join').value=today();
+  document.getElementById('m-plan').value='30:500';
+  document.getElementById('m-amount').value='500';
+  document.getElementById('m-address').value='';
+  document.getElementById('m-note').value='';
+  calcExpiry();
+  document.getElementById('memberModal').classList.add('open');
+}
+
+function editMember(id){
+  const m=members.find(x=>x.id===id);
+  if(!m) return;
+  editingId=id;
+  document.getElementById('modalTitle').textContent='সদস্য আপডেট করুন';
+  document.getElementById('m-name').value=m.name;
+  document.getElementById('m-phone').value=m.phone;
+  document.getElementById('m-age').value=m.age||'';
+  document.getElementById('m-gender').value=m.gender||'পুরুষ';
+  document.getElementById('m-join').value=m.join;
+  document.getElementById('m-plan').value=m.plan;
+  document.getElementById('m-expiry').value=m.expiry;
+  document.getElementById('m-amount').value=m.amount;
+  document.getElementById('m-address').value=m.address||'';
+  document.getElementById('m-note').value=m.note||'';
+  document.getElementById('memberModal').classList.add('open');
+}
+
+function closeModal(){document.getElementById('memberModal').classList.remove('open');}
+
+function calcExpiry(){
+  const join=document.getElementById('m-join').value;
+  const plan=document.getElementById('m-plan').value;
+  if(!join||!plan) return;
+  const days=parseInt(plan.split(':')[0]);
+  const amt=plan.split(':')[1];
+  const d=new Date(join);
+  d.setDate(d.getDate()+days);
+  document.getElementById('m-expiry').value=d.toISOString().split('T')[0];
+  document.getElementById('m-amount').value=amt;
+}
+
+function saveMember(){
+  const name=document.getElementById('m-name').value.trim();
+  const phone=document.getElementById('m-phone').value.trim();
+  const join=document.getElementById('m-join').value;
+  const plan=document.getElementById('m-plan').value;
+  if(!name||!phone||!join){toast('নাম, ফোন ও তারিখ আবশ্যক',false);return;}
+  const obj={
+    name,phone,join,plan,
+    age:parseInt(document.getElementById('m-age').value)||0,
+    gender:document.getElementById('m-gender').value,
+    expiry:document.getElementById('m-expiry').value,
+    amount:parseInt(document.getElementById('m-amount').value)||planAmt(plan),
+    address:document.getElementById('m-address').value,
+    note:document.getElementById('m-note').value,
+    paid:true
+  };
+  if(editingId){
+    const idx=members.findIndex(x=>x.id===editingId);
+    members[idx]={...members[idx],...obj};
+    toast(name+'-এর তথ্য আপডেট হয়েছে');
+  } else {
+    members.push({id:nextId++,...obj});
+    toast(name+' নতুন সদস্য হিসেবে যোগ হয়েছে');
+  }
+  closeModal();
+  renderMembersTable();
+  renderOverview();
+}
+
+function deleteMember(id){
+  const m=members.find(x=>x.id===id);
+  if(!confirm(m.name+'-কে মুছে ফেলবেন?')) return;
+  members=members.filter(x=>x.id!==id);
+  toast(m.name+' মুছে ফেলা হয়েছে');
+  renderMembersTable();
+  renderOverview();
+}
+
+// ===== PAYMENT =====
+function renderPaymentSelect(){
+  const sel=document.getElementById('pay-member-select');
+  sel.innerHTML='<option value="">— সদস্য বাছুন —</option>'+
+    members.map(m=>`<option value="${m.id}">${m.name} (${m.phone})</option>`).join('');
+}
+
+function updatePayAmount(){
+  const id=parseInt(document.getElementById('pay-member-select').value);
+  const plan=document.getElementById('pay-plan').value;
+  const m=members.find(x=>x.id===id);
+  const amt=parseInt(plan.split(':')[1]);
+  document.getElementById('pay-amount-show').textContent='৳'+amt.toLocaleString();
+  document.getElementById('pay-for').textContent=m?m.name+'-এর জন্য':'সদস্য নির্বাচন করুন';
+}
+
+function selectPayMethod(el,method){
+  document.querySelectorAll('.pay-method').forEach(p=>p.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedPayMethod=method;
+  const wrap=document.getElementById('pay-input-section');
+  const lbl=document.getElementById('pay-number-label');
+  if(method==='cash'||method==='bank'){
+    wrap.classList.remove('show');
+  } else {
+    wrap.classList.add('show');
+    const labels={bkash:'bKash নম্বর',nagad:'Nagad নম্বর',rocket:'Rocket নম্বর',upay:'Upay নম্বর'};
+    lbl.textContent=labels[method]||'নম্বর';
+  }
+}
+
+function quickPay(id){
+  showPage('payment');
+  renderPaymentSelect();
+  document.getElementById('pay-member-select').value=id;
+  updatePayAmount();
+}
+
+function processPayment(){
+  const id=parseInt(document.getElementById('pay-member-select').value);
+  if(!id){toast('সদস্য বাছুন',false);return;}
+  if(!selectedPayMethod){toast('পেমেন্ট পদ্ধতি বাছুন',false);return;}
+  const plan=document.getElementById('pay-plan').value;
+  const m=members.find(x=>x.id===id);
+  if(!m){return;}
+  const days=parseInt(plan.split(':')[0]);
+  const amt=parseInt(plan.split(':')[1]);
+  const newJoin=today();
+  const d=new Date(newJoin);
+  d.setDate(d.getDate()+days);
+  m.join=newJoin;
+  m.expiry=d.toISOString().split('T')[0];
+  m.plan=plan;
+  m.amount=amt;
+  m.paid=true;
+  toast(m.name+'-এর পেমেন্ট সম্পন্ন! মেয়াদ '+fmt(m.expiry)+' পর্যন্ত');
+  document.querySelectorAll('.pay-method').forEach(p=>p.classList.remove('selected'));
+  selectedPayMethod=null;
+  document.getElementById('pay-input-section').classList.remove('show');
+  document.getElementById('pay-member-select').value='';
+  document.getElementById('pay-number').value='';
+  document.getElementById('pay-txn').value='';
+  document.getElementById('pay-amount-show').textContent='৳৫০০';
+  document.getElementById('pay-for').textContent='সদস্য নির্বাচন করুন';
+  renderOverview();
+}
+
+// ===== INIT =====
+renderOverview();
+lucide.createIcons();
+
+// Resize handler for hamburger
+window.addEventListener('resize',()=>{
+  if(window.innerWidth>768){
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('mobOverlay').classList.remove('show');
+  }
+  document.getElementById('hamburger').style.display=window.innerWidth<=768?'flex':'none';
+});
+window.dispatchEvent(new Event('resize'));
+</script>
+</body>
+</html>

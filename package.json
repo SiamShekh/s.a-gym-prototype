@@ -1,0 +1,13 @@
+{
+  "name": "sa-manegement",
+  "private": true,
+  "version": "1.0.0",
+  "description": "S.A Gym monorepo — Android/web app + Express API",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "start:backend": "npm --prefix backend run start",
+    "dev:web": "npm --prefix app/web run dev",
+    "build:web": "npm --prefix app/web run build",
+    "install:all": "npm --prefix backend install && npm --prefix app/web install"
+  }
+}

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:text="পেমেন্ট গ্রহণ করুন"
+                android:textColor="@color/ink"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="সদস্য নির্বাচন করুন"
+                android:textColor="@color/gray"
+                android:textSize="12sp" />
+
+            <Spinner
+                android:id="@+id/spinnerMember"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_input"
+                android:paddingHorizontal="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="প্যাকেজ"
+                android:textColor="@color/gray"
+                android:textSize="12sp" />
+
+            <Spinner
+                android:id="@+id/spinnerPlan"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_input"
+                android:paddingHorizontal="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_mini_item"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tvPayFor"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="সদস্য নির্বাচন করুন"
+                    android:textColor="@color/gray"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tvPayAmount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="৳১,০০০"
+                    android:textColor="@color/red"
+                    android:textSize="32sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="12dp"
+                android:text="পেমেন্ট পদ্ধতি বেছে নিন"
+                android:textAllCaps="true"
+                android:textColor="@color/gray"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <GridLayout
+                android:id="@+id/payMethods"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2"
+                android:useDefaultMargins="true">
+
+                <TextView
+                    android:id="@+id/payBkash"
+                    style="@style/SAGymPayMethod"
+                    android:text="bKash\nমোবাইল ব্যাংকিং" />
+
+                <TextView
+                    android:id="@+id/payNagad"
+                    style="@style/SAGymPayMethod"
+                    android:text="Nagad\nমোবাইল ব্যাংকিং" />
+
+                <TextView
+                    android:id="@+id/payRocket"
+                    style="@style/SAGymPayMethod"
+                    android:text="Rocket\nDBBL" />
+
+                <TextView
+                    android:id="@+id/payUpay"
+                    style="@style/SAGymPayMethod"
+                    android:text="Upay\nUCB" />
+
+                <TextView
+                    android:id="@+id/payCash"
+                    style="@style/SAGymPayMethod"
+                    android:text="নগদ টাকা\nCash" />
+
+                <TextView
+                    android:id="@+id/payBank"
+                    style="@style/SAGymPayMethod"
+                    android:text="ব্যাংক\nTransfer" />
+            </GridLayout>
+
+            <LinearLayout
+                android:id="@+id/payInputSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvNumberLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="bKash নম্বর"
+                    android:textColor="@color/gray"
+                    android:textSize="12sp" />
+
+                <EditText
+                    android:id="@+id/etPayNumber"
+                    style="@style/SAGym.EditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:hint="01XXXXXXXXX"
+                    android:inputType="phone" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="ট্রানজেকশন ID"
+                    android:textColor="@color/gray"
+                    android:textSize="12sp" />
+
+                <EditText
+                    android:id="@+id/etPayTxn"
+                    style="@style/SAGym.EditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:hint="TXN ID (ঐচ্ছিক)"
+                    android:inputType="text" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/btnConfirmPay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_topbar_btn"
+                android:gravity="center"
+                android:padding="14dp"
+                android:text="@string/confirm_payment"
+                android:textColor="@color/ink"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Base -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#1A0000" />
+        </shape>
+    </item>
+    <!-- Large red wash (top-right) -->
+    <item
+        android:left="80dp"
+        android:top="-80dp"
+        android:right="-100dp"
+        android:bottom="40dp">
+        <shape android:shape="oval">
+            <solid android:color="#E60000" />
+        </shape>
+    </item>
+    <!-- Soft charcoal blob (left) -->
+    <item
+        android:left="-120dp"
+        android:top="20dp"
+        android:right="140dp"
+        android:bottom="-60dp">
+        <shape android:shape="oval">
+            <solid android:color="#2A0A0A" />
+        </shape>
+    </item>
+    <!-- Accent red circle -->
+    <item
+        android:left="-40dp"
+        android:top="100dp"
+        android:right="200dp"
+        android:bottom="-20dp">
+        <shape android:shape="oval">
+            <solid android:color="#990000" />
+        </shape>
+    </item>
+    <!-- Highlight speck -->
+    <item
+        android:left="200dp"
+        android:top="160dp"
+        android:right="-20dp"
+        android:bottom="20dp">
+        <shape android:shape="oval">
+            <solid android:color="#33FF0000" />
+        </shape>
+    </item>
+</layer-list>

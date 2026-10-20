@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Core: red / black / white -->
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="red">#FF0000</color>
+
+    <!-- Opacity variants -->
+    <color name="red_08">#14FF0000</color>
+    <color name="red_12">#1FFF0000</color>
+    <color name="red_15">#26FF0000</color>
+    <color name="red_20">#33FF0000</color>
+    <color name="red_40">#66FF0000</color>
+    <color name="white_08">#14FFFFFF</color>
+    <color name="white_12">#1FFFFFFF</color>
+    <color name="white_20">#33FFFFFF</color>
+    <color name="white_40">#66FFFFFF</color>
+    <color name="white_60">#99FFFFFF</color>
+    <color name="white_70">#B3FFFFFF</color>
+    <color name="black_40">#66000000</color>
+    <color name="black_70">#B3000000</color>
+    <color name="black_85">#D9000000</color>
+
+    <!-- Primary app background is pure black -->
+    <color name="bg">#000000</color>
+    <color name="sidebar">#000000</color>
+    <color name="card">#000000</color>
+    <color name="card2">#000000</color>
+    <color name="border">@color/white_12</color>
+    <color name="red_dim">@color/red_12</color>
+    <color name="red_med">@color/red_20</color>
+    <color name="ink">@color/white</color>
+    <color name="sky">@color/red</color>
+    <color name="gray">@color/white_40</color>
+    <color name="light">@color/white_60</color>
+    <color name="on_dark">@color/white</color>
+    <color name="on_dark_muted">@color/white_60</color>
+    <color name="input_bg">#000000</color>
+    <color name="transparent">#00000000</color>
+    <color name="overlay">@color/black_70</color>
+    <color name="danger">#FF0000</color>
+
+    <color name="bkash">#E2136E</color>
+    <color name="nagad">#F7941D</color>
+    <color name="rocket">#8B5CF6</color>
+    <color name="upay">#00A651</color>
+</resources>

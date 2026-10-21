@@ -40,4 +40,30 @@ export const authService = {
       admin: admin.toJSON(),
     };
   },
+
+  async updateProfile(adminId, { name, currentPassword, newPassword }) {
+    const admin = await Admin.findById(adminId).select('+password');
+    if (!admin || !admin.isActive) {
+      const err = new Error('Admin account not found or inactive');
+      err.statusCode = 401;
+      throw err;
+    }
+
+    if (name != null && String(name).trim()) {
+      admin.name = String(name).trim();
+    }
+
+    if (newPassword) {
+      const ok = await admin.comparePassword(currentPassword || '');
+      if (!ok) {
+        const err = new Error('Current password is incorrect');
+        err.statusCode = 400;
+        throw err;
+      }
+      admin.password = newPassword;
+    }
+
+    await admin.save();
+    return admin.toJSON();
+  },
 };

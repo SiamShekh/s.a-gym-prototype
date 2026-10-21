@@ -1,12 +1,33 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { api } from '../api/client'
-import { calcExpiry, planAmount, today } from '../lib/memberUtils'
 
-export const fetchMembers = createAsyncThunk('members/fetch', async (_, { getState }) => {
-  const { token } = getState().auth
-  const data = await api('/members', { token })
-  return data.members
-})
+function toQuery(params = {}) {
+  const search = new URLSearchParams()
+  if (params.page != null) search.set('page', String(params.page))
+  if (params.limit != null) search.set('limit', String(params.limit))
+  if (params.q) search.set('q', params.q)
+  if (params.status && params.status !== 'all') search.set('status', params.status)
+  const qs = search.toString()
+  return qs ? `?${qs}` : ''
+}
+
+export const fetchMembers = createAsyncThunk(
+  'members/fetch',
+  async (params = {}, { getState }) => {
+    const { token } = getState().auth
+    const data = await api(`/members${toQuery(params)}`, { token })
+    return {
+      members: data.members,
+      pagination: data.pagination || null,
+      query: params,
+    }
+  },
+)
+
+async function refetchCurrent(dispatch, getState) {
+  const query = getState().members.query
+  await dispatch(fetchMembers(query)).unwrap()
+}
 
 export const saveMember = createAsyncThunk(
   'members/save',
@@ -17,7 +38,7 @@ export const saveMember = createAsyncThunk(
     } else {
       await api('/members', { method: 'POST', body: { ...member, id: '' }, token })
     }
-    await dispatch(fetchMembers()).unwrap()
+    await refetchCurrent(dispatch, getState)
     return { name: member.name, editing }
   },
 )
@@ -25,29 +46,30 @@ export const saveMember = createAsyncThunk(
 export const deleteMember = createAsyncThunk('members/delete', async (member, { getState, dispatch }) => {
   const { token } = getState().auth
   await api(`/members/${member.id}`, { method: 'DELETE', token })
-  await dispatch(fetchMembers()).unwrap()
+  await refetchCurrent(dispatch, getState)
   return member.name
 })
 
 export const processPayment = createAsyncThunk(
   'members/pay',
-  async ({ memberId, plan, method }, { getState, dispatch }) => {
+  async ({ memberId, plan, method, amount }, { getState, dispatch }) => {
     const { token } = getState().auth
     const member = getState().members.list.find((m) => m.id === memberId)
     if (!member) throw new Error('missing')
-    const join = today()
-    const expiry = calcExpiry(join, plan)
-    const updated = {
-      ...member,
-      join,
-      expiry,
-      plan,
-      amount: planAmount(plan),
-      paid: true,
+    const paidAmount = Number(amount)
+    if (!Number.isFinite(paidAmount) || paidAmount <= 0) throw new Error('amount')
+    const data = await api(`/members/${member.id}/pay`, {
+      method: 'POST',
+      body: { plan, method, amount: paidAmount },
+      token,
+    })
+    await refetchCurrent(dispatch, getState)
+    return {
+      name: data.member?.name || member.name,
+      method: data.method || method,
+      expiry: data.member?.expiry,
+      amount: data.amount ?? paidAmount,
     }
-    await api(`/members/${member.id}`, { method: 'PUT', body: updated, token })
-    await dispatch(fetchMembers()).unwrap()
-    return { name: member.name, method, expiry }
   },
 )
 
@@ -56,16 +78,10 @@ const membersSlice = createSlice({
   initialState: {
     list: [],
     status: 'idle',
-    pendingPayMemberId: null,
+    pagination: null,
+    query: {},
   },
-  reducers: {
-    requestPay(state, action) {
-      state.pendingPayMemberId = action.payload
-    },
-    consumePayRequest(state) {
-      state.pendingPayMemberId = null
-    },
-  },
+  reducers: {},
   extraReducers(builder) {
     builder
       .addCase(fetchMembers.pending, (state) => {
@@ -73,7 +89,9 @@ const membersSlice = createSlice({
       })
       .addCase(fetchMembers.fulfilled, (state, action) => {
         state.status = 'idle'
-        state.list = action.payload
+        state.list = action.payload.members
+        state.pagination = action.payload.pagination
+        state.query = action.payload.query || {}
       })
       .addCase(fetchMembers.rejected, (state) => {
         state.status = 'error'
@@ -81,5 +99,4 @@ const membersSlice = createSlice({
   },
 })
 
-export const { requestPay, consumePayRequest } = membersSlice.actions
 export default membersSlice.reducer

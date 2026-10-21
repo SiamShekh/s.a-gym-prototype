@@ -1,87 +1,172 @@
-import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { toast } from 'sonner'
-import { GYM_PHONE, daysLeft, planLabel, whatsappUrl } from '../lib/memberUtils'
-import { requestPay } from '../store/membersSlice'
+import { api } from '../api/client'
 
-function messageFor(member) {
-  const d = daysLeft(member.expiry)
-  if (d < 0) return `আপনার S.A Gym সদস্যপদের মেয়াদ শেষ হয়ে গেছে। রিনিউ করতে কল করুন: ${GYM_PHONE}`
-  return `আপনার S.A Gym সদস্যপদের মেয়াদ ${d} দিনের মধ্যে শেষ হবে। রিনিউ করুন: ${GYM_PHONE}`
+const STATUS_LABEL = {
+  sent: 'পাঠানো',
+  dry_run: 'ড্রাই-রান',
+  skipped_duplicate: 'ডুপ্লিকেট স্কিপ',
+  skipped_cap: 'লিমিট স্কিপ',
+  skipped_opt_out: 'অপ্ট-আউট',
+  skipped_invalid_phone: 'অবৈধ ফোন',
+  skipped_budget: 'বাজেট স্কিপ',
+  failed: 'ব্যর্থ',
+}
+
+function formatWhen(iso) {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleString('bn-BD', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 export default function NotificationsPage() {
-  const members = useSelector((s) => s.members.list)
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
+  const token = useSelector((s) => s.auth.token)
+  const [queue, setQueue] = useState(null)
+  const [logs, setLogs] = useState([])
+  const [pagination, setPagination] = useState(null)
+  const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(true)
 
-  const sections = [
-    ['● আজই শেষ (জরুরি)', members.filter((m) => daysLeft(m.expiry) >= 0 && daysLeft(m.expiry) <= 1), 'tone-primary'],
-    ['● ২-৩ দিন বাকি', members.filter((m) => { const d = daysLeft(m.expiry); return d >= 2 && d <= 3 }), 'tone-content'],
-    ['● ৪-৭ দিন বাকি', members.filter((m) => { const d = daysLeft(m.expiry); return d >= 4 && d <= 7 }), 'tone-muted'],
-    ['● মেয়াদ শেষ — রিনিউ করুন', members.filter((m) => daysLeft(m.expiry) < 0), 'tone-primary'],
-  ]
-  const any = sections.some(([, list]) => list.length)
-
-  const notify = (member) => {
-    window.open(whatsappUrl(member.phone, messageFor(member)), '_blank', 'noopener')
-    toast.success(`${member.name}-কে WhatsApp নোটিফিকেশন পাঠানো হয়েছে`)
-  }
-
-  const notifyAll = () => {
-    const list = members.filter((m) => daysLeft(m.expiry) <= 7)
-    if (!list.length) {
-      toast('সবার সদস্যপদ ঠিক আছে!')
-      return
+  const load = async (p = page) => {
+    setLoading(true)
+    try {
+      const [q, h] = await Promise.all([
+        api('/notifications/queue', { token }),
+        api(`/notifications/history?page=${p}&limit=30`, { token }),
+      ])
+      setQueue(q.queue || q.preview || null)
+      setLogs(h.logs || [])
+      setPagination(h.pagination || null)
+    } catch {
+      toast.error('নোটিফিকেশন লোড ব্যর্থ')
+    } finally {
+      setLoading(false)
     }
-    list.forEach(notify)
-    toast.success(`${list.length} জনকে WhatsApp নোটিফিকেশন পাঠানো হচ্ছে`)
   }
+
+  useEffect(() => {
+    load(page)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, page])
+
+  const sections = queue?.sections || []
+  const todaySent = logs.filter((l) => {
+    if (!l.createdAt) return false
+    const day = new Date(l.createdAt).toDateString()
+    return day === new Date().toDateString() && (l.status === 'sent' || l.status === 'dry_run')
+  }).length
 
   return (
     <div className="stack">
       <section className="banner">
-        <strong>সাবস্ক্রিপশন মেয়াদ সতর্কতা</strong>
-        <p className="light" style={{ margin: '4px 0 12px', fontSize: 12 }}>
-          যাদের মেয়াদ শেষ হতে চলেছে তাদের নোটিফাই করুন
+        <strong>SMS অটো-নোটিফিকেশন</strong>
+        <p className="light" style={{ margin: '4px 0 0', fontSize: 12 }}>
+          প্রতিদিন স্বয়ংক্রিয়ভাবে পাঠানো হয় (Asia/Dhaka)। শুক্রবার বন্ধ।
+          ম্যানুয়াল অ্যালার্ট বাটন নেই — নিচে হিস্টোরি দেখুন।
         </p>
-        <button className="btn-red" type="button" onClick={notifyAll}>সবাইকে নোটিফাই</button>
+        <div className="notify-status-row">
+          <span className="notify-pill">
+            {queue?.smsEnabled ? 'SMS চালু' : 'ড্রাই-রান মোড'}
+          </span>
+          <span className="notify-pill">
+            লিমিট {queue?.maxChars || 70} অক্ষর
+          </span>
+          {queue?.skipToday ? (
+            <span className="notify-pill danger">আজ স্কিপ (শুক্রবার)</span>
+          ) : (
+            <span className="notify-pill">আজ ক্রন চলবে</span>
+          )}
+        </div>
       </section>
-      {!any && <p className="empty">সবার সাবস্ক্রিপশন ঠিক আছে!</p>}
-      {sections.map(([title, list, color]) =>
-        list.length ? (
-          <section key={title}>
-            <div className="section-label">{title}</div>
-            <div className="card-grid">
-            {list.map((m) => {
-              const d = daysLeft(m.expiry)
-              return (
-                <article className="card member" key={m.id}>
-                  <div className="name">{m.name}</div>
-                  <div className="phone">{m.phone} · {planLabel(m.plan)}</div>
-                  <div className={color} style={{ fontWeight: 700, fontSize: 13, marginTop: 8 }}>
-                    {d < 0 ? 'মেয়াদ শেষ হয়ে গেছে!' : `${d} দিন বাকি`}
+
+      <section className="card bg-base-100">
+        <h2 className="section-title">আজকের কিউ (অটো)</h2>
+        <p className="light" style={{ fontSize: 12, margin: '0 0 12px' }}>
+          ক্রন এই গ্রুপগুলো থেকে পাঠাবে — প্রতি স্টেজে একবার, মেয়াদ শেষের ৭ দিন পর আর পাঠাবে না।
+        </p>
+        {loading && !queue && <p className="empty">লোড হচ্ছে…</p>}
+        <div className="notify-queue-grid">
+          {sections.map((s) => (
+            <article className="notify-queue-card" key={s.key}>
+              <strong>{s.count}</strong>
+              <span>{s.title}</span>
+              <em>{s.hint}</em>
+            </article>
+          ))}
+        </div>
+        <div className="meta" style={{ marginTop: 12 }}>
+          কিউতে মোট {queue?.total ?? 0} জন · আজকের লগে পাঠানো/ড্রাই-রান ≈ {todaySent}
+        </div>
+      </section>
+
+      <section>
+        <div className="section-label">মেসেজ হিস্টোরি</div>
+        {loading && !logs.length && <p className="empty">লোড হচ্ছে…</p>}
+        {!loading && !logs.length && <p className="empty">এখনো কোনো SMS লগ নেই</p>}
+        <div className="card-grid">
+          {logs.map((log) => (
+            <article className="card member bg-base-100" key={log.id}>
+              <div className="row">
+                <div className="grow">
+                  <div className="name">{log.memberName || 'সদস্য'}</div>
+                  <div className="phone">
+                    {log.memberCode ? `${log.memberCode} · ` : ''}
+                    {log.phone}
+                    {' · '}
+                    {log.bucketTitle || log.bucket}
                   </div>
-                  <div className="actions">
-                    <button className="btn-ghost" type="button" onClick={() => notify(m)}>Notify</button>
-                    <button
-                      className="btn-red"
-                      type="button"
-                      onClick={() => {
-                        dispatch(requestPay(m.id))
-                        navigate('/payment')
-                      }}
-                    >
-                      পেমেন্ট
-                    </button>
-                  </div>
-                </article>
-              )
-            })}
+                </div>
+                <span
+                  className={`badge ${log.status === 'sent' || log.status === 'dry_run' ? 'ok' : 'hot'}`}
+                >
+                  {STATUS_LABEL[log.status] || log.status}
+                </span>
+              </div>
+              <div className="meta">
+                {log.message}
+                {'\n'}
+                {formatWhen(log.createdAt)}
+                {' · '}
+                {log.source === 'cron' ? 'Cron' : log.adminName || 'Admin'}
+                {' · '}
+                {log.charCount} অক্ষর
+                {log.error ? `\n${log.error}` : ''}
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {pagination && pagination.totalPages > 1 && (
+          <div className="pagination">
+            <button
+              className="btn-ghost"
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              আগে
+            </button>
+            <div className="pagination-status">
+              {pagination.page} / {pagination.totalPages}
             </div>
-          </section>
-        ) : null,
-      )}
+            <button
+              className="btn-ghost"
+              type="button"
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              পরে
+            </button>
+          </div>
+        )}
+      </section>
     </div>
   )
 }

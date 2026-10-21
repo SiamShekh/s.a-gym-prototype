@@ -4,6 +4,7 @@ import { requireAuth } from '../../middleware/auth.js';
 import { validate } from '../../middleware/validate.js';
 import { membersController } from './members.controller.js';
 import {
+  acceptPaymentSchema,
   createMemberSchema,
   updateMemberSchema,
 } from './members.validation.js';
@@ -13,14 +14,19 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/', asyncHandler((req, res) => membersController.list(req, res)));
-router.get(
-  '/:id',
-  asyncHandler((req, res) => membersController.getById(req, res))
-);
 router.post(
   '/',
   validate(createMemberSchema),
   asyncHandler((req, res) => membersController.create(req, res))
+);
+router.post(
+  '/:id/pay',
+  validate(acceptPaymentSchema),
+  asyncHandler((req, res) => membersController.acceptPayment(req, res))
+);
+router.get(
+  '/:id',
+  asyncHandler((req, res) => membersController.getById(req, res))
 );
 router.put(
   '/:id',

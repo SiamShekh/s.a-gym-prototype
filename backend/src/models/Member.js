@@ -9,6 +9,13 @@ import { PLAN_CODES } from '../utils/plans.js';
  */
 const memberSchema = new mongoose.Schema(
   {
+    code: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
     name: {
       type: String,
       required: true,
@@ -49,6 +56,10 @@ const memberSchema = new mongoose.Schema(
     paid: {
       type: Boolean,
       default: true,
+    },
+    smsOptOut: {
+      type: Boolean,
+      default: false,
     },
   },
   {

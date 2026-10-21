@@ -75,6 +75,39 @@ describe('Members API', () => {
     expect(res.body.members[0].id).toEqual(expect.any(String));
   });
 
+  it('paginates members with page and limit', async () => {
+    const headers = await authHeader();
+    for (let i = 0; i < 5; i += 1) {
+      await request(app)
+        .post('/api/members')
+        .set(headers)
+        .send({
+          ...validMember,
+          name: `সদস্য ${i}`,
+          phone: `0171234567${i}`,
+        });
+    }
+
+    const res = await request(app)
+      .get('/api/members?page=1&limit=2')
+      .set(headers);
+
+    expect(res.status).toBe(200);
+    expect(res.body.members).toHaveLength(2);
+    expect(res.body.pagination).toEqual({
+      page: 1,
+      limit: 2,
+      total: 5,
+      totalPages: 3,
+    });
+
+    const page2 = await request(app)
+      .get('/api/members?page=2&limit=2')
+      .set(headers);
+    expect(page2.body.members).toHaveLength(2);
+    expect(page2.body.pagination.page).toBe(2);
+  });
+
   it('gets, updates, and deletes a member', async () => {
     const headers = await authHeader();
     const created = await request(app)

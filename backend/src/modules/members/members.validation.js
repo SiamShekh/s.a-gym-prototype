@@ -45,3 +45,19 @@ export const updateMemberSchema = yup
     'at least one field is required',
     (value) => value && Object.keys(value).length > 0
   );
+
+export const acceptPaymentSchema = yup.object({
+  plan: yup
+    .string()
+    .oneOf(PLAN_CODES, `plan must be one of: ${PLAN_CODES.join(', ')}`)
+    .required('plan is required'),
+  amount: yup
+    .number()
+    .typeError('amount must be a number')
+    .positive('amount must be positive')
+    .required('amount is required'),
+  method: yup
+    .string()
+    .oneOf(['bkash', 'nagad', 'rocket', 'cash'], 'invalid payment method')
+    .required('method is required'),
+});

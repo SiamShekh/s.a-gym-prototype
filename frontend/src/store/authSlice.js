@@ -31,13 +31,31 @@ const authSlice = createSlice({
   initialState: {
     token: saved?.token || null,
     adminName: saved?.adminName || null,
+    adminRole: saved?.adminRole || null,
+    adminId: saved?.adminId || null,
     status: 'idle',
   },
   reducers: {
     logout(state) {
       state.token = null
       state.adminName = null
+      state.adminRole = null
+      state.adminId = null
       sessionStorage.removeItem(STORAGE_KEY)
+    },
+    updateSessionProfile(state, action) {
+      if (action.payload.adminName != null) {
+        state.adminName = action.payload.adminName
+      }
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          token: state.token,
+          adminName: state.adminName,
+          adminRole: state.adminRole,
+          adminId: state.adminId,
+        }),
+      )
     },
   },
   extraReducers(builder) {
@@ -49,9 +67,16 @@ const authSlice = createSlice({
         state.status = 'idle'
         state.token = action.payload.token
         state.adminName = action.payload.admin?.name || null
+        state.adminRole = action.payload.admin?.role || 'owner'
+        state.adminId = action.payload.admin?.id || null
         sessionStorage.setItem(
           STORAGE_KEY,
-          JSON.stringify({ token: state.token, adminName: state.adminName }),
+          JSON.stringify({
+            token: state.token,
+            adminName: state.adminName,
+            adminRole: state.adminRole,
+            adminId: state.adminId,
+          }),
         )
       })
       .addCase(login.rejected, (state) => {
@@ -60,5 +85,5 @@ const authSlice = createSlice({
   },
 })
 
-export const { logout } = authSlice.actions
+export const { logout, updateSessionProfile } = authSlice.actions
 export default authSlice.reducer

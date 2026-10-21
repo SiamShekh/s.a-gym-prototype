@@ -22,11 +22,12 @@ async function main() {
   if (admin) {
     admin.name = name;
     admin.password = password;
+    admin.role = 'owner';
     admin.isActive = true;
     await admin.save();
     console.log(`Updated admin: ${admin.phone}`);
   } else {
-    admin = await Admin.create({ name, phone, password });
+    admin = await Admin.create({ name, phone, password, role: 'owner' });
     console.log(`Created admin: ${admin.phone}`);
   }
 

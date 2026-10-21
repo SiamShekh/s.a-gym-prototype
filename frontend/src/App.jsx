@@ -7,9 +7,12 @@ import Shell from './components/Shell'
 import LoginPage from './pages/LoginPage'
 import OverviewPage from './pages/OverviewPage'
 import MembersPage from './pages/MembersPage'
-import BillingPage from './pages/BillingPage'
 import NotificationsPage from './pages/NotificationsPage'
-import PaymentPage from './pages/PaymentPage'
+import ActionsPage from './pages/ActionsPage'
+import PaymentsPage from './pages/PaymentsPage'
+import DuePage from './pages/DuePage'
+import ExpensesPage from './pages/ExpensesPage'
+import AdminsPage from './pages/AdminsPage'
 import MorePage from './pages/MorePage'
 import { getStoredTheme } from './lib/theme'
 
@@ -40,10 +43,15 @@ export default function App() {
             <Route element={<Shell />}>
               <Route index element={<OverviewPage />} />
               <Route path="members" element={<MembersPage />} />
-              <Route path="billing" element={<BillingPage />} />
+              <Route path="due" element={<DuePage />} />
+              <Route path="payments" element={<PaymentsPage />} />
+              <Route path="expenses" element={<ExpensesPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="payment" element={<PaymentPage />} />
+              <Route path="actions" element={<ActionsPage />} />
+              <Route path="admins" element={<AdminsPage />} />
               <Route path="more" element={<MorePage />} />
+              <Route path="billing" element={<Navigate to="/payments" replace />} />
+              <Route path="payment" element={<Navigate to="/members" replace />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

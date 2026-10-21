@@ -29,6 +29,27 @@ export const requireAuth = asyncHandler(async (req, res, next) => {
     throw err;
   }
 
+  // Older admins may lack role — treat as owner so the app keeps working
+  if (!admin.role) {
+    admin.role = 'owner';
+    await admin.save();
+  }
+
   req.admin = admin;
+  next();
+});
+
+export const requireOwner = asyncHandler(async (req, res, next) => {
+  if (!req.admin) {
+    const err = new Error('Authentication required');
+    err.statusCode = 401;
+    throw err;
+  }
+  const role = req.admin.role || 'owner';
+  if (role !== 'owner') {
+    const err = new Error('Owner access required');
+    err.statusCode = 403;
+    throw err;
+  }
   next();
 });

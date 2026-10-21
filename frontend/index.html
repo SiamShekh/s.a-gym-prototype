@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="bn" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/sa_gym_logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('sa-theme')
+          if (t === 'light' || t === 'dark') {
+            document.documentElement.setAttribute('data-theme', t)
+            document.documentElement.style.colorScheme = t
+          }
+        } catch (e) {}
+      })()
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>S.A Gym</title>
+  </head>
+  <body class="bg-base-100 text-base-content">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

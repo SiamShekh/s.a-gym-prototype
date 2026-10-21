@@ -1,3 +1,4 @@
+import '../src/polyfills.js';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';

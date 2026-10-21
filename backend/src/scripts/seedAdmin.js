@@ -4,6 +4,7 @@
  *
  * Login uses phone + password (same as Android login screen).
  */
+import '../polyfills.js';
 import { connectDb, disconnectDb } from '../db/connection.js';
 import Admin from '../models/Admin.js';
 

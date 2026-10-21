@@ -2,6 +2,8 @@
 
 Express REST API with MongoDB (Mongoose), Yup validation, and JWT admin auth.
 
+Requires **Node.js 20.19+** (Mongoose 9 / MongoDB driver use global `crypto`).
+
 ## Setup
 
 ```bash
@@ -12,6 +14,8 @@ npm install
 npm run seed:admin
 npm run dev
 ```
+
+On Railway / Docker, set Node to 20 (see `engines` in `package.json`, `.nvmrc`).
 
 Default seeded admin:
 

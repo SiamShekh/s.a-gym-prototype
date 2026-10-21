@@ -6,6 +6,8 @@ function toQuery(params = {}) {
   if (params.page != null) search.set('page', String(params.page))
   if (params.limit != null) search.set('limit', String(params.limit))
   if (params.type && params.type !== 'all') search.set('type', params.type)
+  if (params.from) search.set('from', params.from)
+  if (params.to) search.set('to', params.to)
   const qs = search.toString()
   return qs ? `?${qs}` : ''
 }
@@ -29,7 +31,7 @@ const actionsSlice = createSlice({
     list: [],
     status: 'idle',
     pagination: null,
-    query: { page: 1, limit: 30, type: 'all' },
+    query: { page: 1, limit: 30, type: 'all', from: '', to: '' },
   },
   reducers: {},
   extraReducers(builder) {

@@ -9,7 +9,7 @@ const validMember = {
   plan: '30:1000',
 };
 
-describe('Payments, expenses, reports, admins, export', () => {
+describe('Payments, expenses, reports, admins', () => {
   it('assigns member code and records payment history on create + pay', async () => {
     const headers = await authHeader();
     const created = await request(app)
@@ -71,35 +71,58 @@ describe('Payments, expenses, reports, admins, export', () => {
         phone: '01710000002',
         password: 'secret123',
         role: 'staff',
+        permissions: ['view_members', 'accept_payment'],
       });
     expect(created.status).toBe(201);
     expect(created.body.admin.role).toBe('staff');
+    expect(created.body.admin.permissions).toEqual(['view_members', 'accept_payment']);
 
     const staffLogin = await loginAs('01710000002', 'secret123');
     const staffHeaders = { Authorization: `Bearer ${staffLogin.body.token}` };
     const denied = await request(app).get('/api/admins').set(staffHeaders);
     expect(denied.status).toBe(403);
+
+    expect((await request(app).get('/api/members').set(staffHeaders)).status).toBe(200);
+    expect((await request(app).get('/api/reports/overview').set(staffHeaders)).status).toBe(403);
+    expect((await request(app).get('/api/expenses').set(staffHeaders)).status).toBe(403);
+
+    const updated = await request(app)
+      .patch(`/api/admins/${created.body.admin.id}/permissions`)
+      .set(ownerHeaders)
+      .send({ permissions: ['view_members', 'view_reports'] });
+    expect(updated.status).toBe(200);
+    expect(updated.body.admin.permissions).toEqual(['view_members', 'view_reports']);
+
+    const edited = await request(app)
+      .put(`/api/admins/${created.body.admin.id}`)
+      .set(ownerHeaders)
+      .send({
+        name: 'Staff Updated',
+        phone: '01710000002',
+        role: 'staff',
+        permissions: ['view_members', 'accept_payment', 'view_payments'],
+      });
+    expect(edited.status).toBe(200);
+    expect(edited.body.admin.name).toBe('Staff Updated');
+    expect(edited.body.admin.permissions).toContain('view_payments');
+
+    const deleted = await request(app)
+      .delete(`/api/admins/${created.body.admin.id}`)
+      .set(ownerHeaders);
+    expect(deleted.status).toBe(200);
+    expect(deleted.body.admin.name).toBe('Staff Updated');
   });
 
-  it('exports members csv', async () => {
-    const headers = await authHeader();
-    await request(app).post('/api/members').set(headers).send(validMember);
-    const res = await request(app).get('/api/export/members').set(headers);
-    expect(res.status).toBe(200);
-    expect(res.headers['content-type']).toMatch(/csv/);
-    expect(res.text).toContain('code,name,phone');
-    expect(res.text).toContain('রাহুল');
-  });
-
-  it('lists due members (unpaid or expired)', async () => {
+  it('lists unpaid members', async () => {
     const headers = await authHeader();
     await request(app)
       .post('/api/members')
       .set(headers)
       .send({ ...validMember, paid: false, join: '2020-01-01', plan: '30:1000' });
 
-    const res = await request(app).get('/api/members?status=due').set(headers);
+    const res = await request(app).get('/api/members?status=unpaid').set(headers);
     expect(res.status).toBe(200);
     expect(res.body.members.length).toBeGreaterThanOrEqual(1);
+    expect(res.body.members.every((m) => m.paid === false)).toBe(true);
   });
 });

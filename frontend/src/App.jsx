@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { store } from './store/store'
 import Shell from './components/Shell'
+import RequirePermission from './components/RequirePermission'
 import LoginPage from './pages/LoginPage'
 import OverviewPage from './pages/OverviewPage'
 import MembersPage from './pages/MembersPage'
@@ -33,6 +34,14 @@ function AppToaster() {
   return <Toaster theme={theme} position="top-center" />
 }
 
+function Guard({ permission, page: Page }) {
+  return (
+    <RequirePermission permission={permission}>
+      <Page />
+    </RequirePermission>
+  )
+}
+
 export default function App() {
   return (
     <Provider store={store}>
@@ -41,13 +50,13 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route element={<Shell />}>
-              <Route index element={<OverviewPage />} />
-              <Route path="members" element={<MembersPage />} />
-              <Route path="due" element={<DuePage />} />
-              <Route path="payments" element={<PaymentsPage />} />
-              <Route path="expenses" element={<ExpensesPage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="actions" element={<ActionsPage />} />
+              <Route index element={<Guard permission="view_reports" page={OverviewPage} />} />
+              <Route path="members" element={<Guard permission="view_members" page={MembersPage} />} />
+              <Route path="due" element={<Guard permission="view_members" page={DuePage} />} />
+              <Route path="payments" element={<Guard permission="view_payments" page={PaymentsPage} />} />
+              <Route path="expenses" element={<Guard permission="manage_expenses" page={ExpensesPage} />} />
+              <Route path="notifications" element={<Guard permission="send_notifications" page={NotificationsPage} />} />
+              <Route path="actions" element={<Guard permission="view_actions" page={ActionsPage} />} />
               <Route path="admins" element={<AdminsPage />} />
               <Route path="more" element={<MorePage />} />
               <Route path="billing" element={<Navigate to="/payments" replace />} />

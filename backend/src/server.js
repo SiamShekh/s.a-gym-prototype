@@ -23,7 +23,6 @@ async function start() {
     console.log(`Expenses:  /api/expenses`);
     console.log(`Reports:   /api/reports/overview`);
     console.log(`Admins:    /api/admins (owner)`);
-    console.log(`Export:    /api/export/{members|payments|expenses}`);
     console.log(`Actions:   /api/actions`);
   });
 }

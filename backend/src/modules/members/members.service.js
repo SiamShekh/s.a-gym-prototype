@@ -53,12 +53,6 @@ function buildListFilter({ q, status }) {
     filter.expiry = { $gt: in7 };
   } else if (status === 'unpaid') {
     filter.paid = false;
-  } else if (status === 'due') {
-    filter.$and = [
-      ...(filter.$or ? [{ $or: filter.$or }] : []),
-      { $or: [{ paid: false }, { expiry: { $lt: today } }] },
-    ];
-    delete filter.$or;
   }
 
   return filter;

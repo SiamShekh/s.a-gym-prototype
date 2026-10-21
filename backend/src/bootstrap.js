@@ -1,5 +1,9 @@
 import Admin from './models/Admin.js';
 import Member from './models/Member.js';
+import {
+  ALL_PERMISSION_KEYS,
+  DEFAULT_STAFF_PERMISSIONS,
+} from './constants/permissions.js';
 
 /**
  * Bring older DBs in line with the current API (roles + member codes).
@@ -9,6 +13,16 @@ export async function bootstrapData() {
   const roleResult = await Admin.updateMany(
     { $or: [{ role: { $exists: false } }, { role: null }, { role: '' }] },
     { $set: { role: 'owner' } }
+  );
+
+  await Admin.updateMany(
+    { role: 'owner', $or: [{ permissions: { $exists: false } }, { permissions: null }] },
+    { $set: { permissions: ALL_PERMISSION_KEYS } }
+  );
+
+  await Admin.updateMany(
+    { role: 'staff', $or: [{ permissions: { $exists: false } }, { permissions: null }] },
+    { $set: { permissions: DEFAULT_STAFF_PERMISSIONS } }
   );
 
   const missing = await Member.find({

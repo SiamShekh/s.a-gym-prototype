@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { api } from '../api/client'
+import { DEFAULT_STAFF_PERMISSIONS } from '../lib/permissions'
 
 const STORAGE_KEY = 'sa_gym_session'
 
@@ -26,6 +27,19 @@ export const login = createAsyncThunk('auth/login', async ({ phone, password }, 
   }
 })
 
+function persist(state) {
+  sessionStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      token: state.token,
+      adminName: state.adminName,
+      adminRole: state.adminRole,
+      adminId: state.adminId,
+      permissions: state.permissions,
+    }),
+  )
+}
+
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
@@ -33,6 +47,7 @@ const authSlice = createSlice({
     adminName: saved?.adminName || null,
     adminRole: saved?.adminRole || null,
     adminId: saved?.adminId || null,
+    permissions: saved?.permissions || null,
     status: 'idle',
   },
   reducers: {
@@ -41,21 +56,14 @@ const authSlice = createSlice({
       state.adminName = null
       state.adminRole = null
       state.adminId = null
+      state.permissions = null
       sessionStorage.removeItem(STORAGE_KEY)
     },
     updateSessionProfile(state, action) {
       if (action.payload.adminName != null) {
         state.adminName = action.payload.adminName
       }
-      sessionStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          token: state.token,
-          adminName: state.adminName,
-          adminRole: state.adminRole,
-          adminId: state.adminId,
-        }),
-      )
+      persist(state)
     },
   },
   extraReducers(builder) {
@@ -69,15 +77,11 @@ const authSlice = createSlice({
         state.adminName = action.payload.admin?.name || null
         state.adminRole = action.payload.admin?.role || 'owner'
         state.adminId = action.payload.admin?.id || null
-        sessionStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({
-            token: state.token,
-            adminName: state.adminName,
-            adminRole: state.adminRole,
-            adminId: state.adminId,
-          }),
-        )
+        state.permissions =
+          action.payload.admin?.role === 'owner'
+            ? null
+            : action.payload.admin?.permissions || DEFAULT_STAFF_PERMISSIONS
+        persist(state)
       })
       .addCase(login.rejected, (state) => {
         state.status = 'idle'

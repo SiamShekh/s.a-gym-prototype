@@ -10,7 +10,6 @@ import paymentsRoutes from './modules/payments/payments.routes.js';
 import expensesRoutes from './modules/expenses/expenses.routes.js';
 import reportsRoutes from './modules/reports/reports.routes.js';
 import adminsRoutes from './modules/admins/admins.routes.js';
-import exportRoutes from './modules/export/export.routes.js';
 import notificationsRoutes from './modules/notifications/notifications.routes.js';
 import { notFound } from './middleware/notFound.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -39,7 +38,6 @@ app.get('/', (req, res) => {
       expenses: 'GET|POST|DELETE /api/expenses (auth)',
       reports: 'GET /api/reports/overview (auth)',
       admins: 'GET|POST /api/admins (owner)',
-      export: 'GET /api/export/{members|payments|expenses} (auth)',
       actions: 'GET /api/actions (auth)',
       profile: 'PATCH /api/auth/profile (auth)',
       notificationsQueue: 'GET /api/notifications/queue (auth)',
@@ -57,7 +55,6 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/expenses', expensesRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/admins', adminsRoutes);
-app.use('/api/export', exportRoutes);
 app.use('/api/notifications', notificationsRoutes);
 
 app.use(notFound);

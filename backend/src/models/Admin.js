@@ -29,6 +29,11 @@ const adminSchema = new mongoose.Schema(
       enum: ['owner', 'staff'],
       default: 'owner',
     },
+    /** Staff-only granular permissions. Owners ignore this and have full access. */
+    permissions: {
+      type: [String],
+      default: undefined,
+    },
     isActive: {
       type: Boolean,
       default: true,

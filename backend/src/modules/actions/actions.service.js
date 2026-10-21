@@ -40,6 +40,14 @@ export const actionsService = {
       filter.type = options.type;
     }
 
+    const from = parseDayStart(options.from);
+    const to = parseDayEnd(options.to);
+    if (from || to) {
+      filter.createdAt = {};
+      if (from) filter.createdAt.$gte = from;
+      if (to) filter.createdAt.$lte = to;
+    }
+
     const [total, rows] = await Promise.all([
       Action.countDocuments(filter),
       Action.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
@@ -56,3 +64,19 @@ export const actionsService = {
     };
   },
 };
+
+function isIsoDay(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function parseDayStart(value) {
+  if (!isIsoDay(value)) return null;
+  const d = new Date(`${value}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function parseDayEnd(value) {
+  if (!isIsoDay(value)) return null;
+  const d = new Date(`${value}T23:59:59.999`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}

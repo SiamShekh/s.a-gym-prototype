@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { requireAuth } from '../../middleware/auth.js';
+import { requireAuth, requirePermission } from '../../middleware/auth.js';
 import { notificationsController } from './notifications.controller.js';
 
 const router = Router();
@@ -11,7 +11,7 @@ router.post(
   asyncHandler((req, res) => notificationsController.cron(req, res))
 );
 
-router.use(requireAuth);
+router.use(requireAuth, requirePermission('send_notifications'));
 
 router.get(
   '/queue',

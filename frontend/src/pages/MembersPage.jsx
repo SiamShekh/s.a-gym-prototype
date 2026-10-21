@@ -2,28 +2,25 @@ import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'sonner'
 import {
-  GYM_PHONE,
-  daysLeft,
   formatDate,
   money,
   planLabel,
   statusOf,
-  whatsappUrl,
 } from '../lib/memberUtils'
 import { deleteMember, fetchMembers } from '../store/membersSlice'
 import MemberFormSheet from '../components/MemberFormSheet'
 import Overlay from '../components/Overlay'
 import PaymentSheet from '../components/PaymentSheet'
+import { hasPermission } from '../lib/permissions'
 
 const PAGE_SIZE = 20
 
 const FILTERS = [
   ['all', 'সকল'],
   ['active', 'সক্রিয়'],
-  ['expiring', 'শেষ হচ্ছে'],
+  ['expiring', 'শেষ হবে'],
   ['expired', 'মেয়াদ শেষ'],
   ['unpaid', 'বকেয়া'],
-  ['due', 'ডিউ'],
 ]
 
 function Icon({ d }) {
@@ -32,17 +29,6 @@ function Icon({ d }) {
       <path d={d} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
-}
-
-function alertMessage(member) {
-  const d = daysLeft(member.expiry)
-  if (d < 0) {
-    return `আপনার S.A Gym সদস্যপদের মেয়াদ শেষ হয়ে গেছে। রিনিউ করতে কল করুন: ${GYM_PHONE}`
-  }
-  if (d <= 7) {
-    return `আপনার S.A Gym সদস্যপদের মেয়াদ ${d} দিনের মধ্যে শেষ হবে। রিনিউ করুন: ${GYM_PHONE}`
-  }
-  return `S.A Gym থেকে শুভেচ্ছা। আপনার সদস্যপদ সক্রিয় আছে। প্রয়োজনে কল করুন: ${GYM_PHONE}`
 }
 
 function initialOf(name) {
@@ -55,6 +41,9 @@ export default function MembersPage() {
   const list = useSelector((s) => s.members.list)
   const pagination = useSelector((s) => s.members.pagination)
   const status = useSelector((s) => s.members.status)
+  const adminRole = useSelector((s) => s.auth.adminRole)
+  const permissions = useSelector((s) => s.auth.permissions)
+  const can = (key) => hasPermission(adminRole, permissions, key)
   const [filter, setFilter] = useState('all')
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -104,11 +93,6 @@ export default function MembersPage() {
     } catch {
       toast.error('মুছতে ব্যর্থ')
     }
-  }
-
-  const sendAlert = (member) => {
-    window.open(whatsappUrl(member.phone, alertMessage(member)), '_blank', 'noopener')
-    toast.success(`${member.name}-কে অ্যালার্ট পাঠানো হয়েছে`)
   }
 
   return (
@@ -191,33 +175,32 @@ export default function MembersPage() {
                 </div>
               </div>
 
-              <div className="member-actions">
-                <button className="member-action" type="button" onClick={() => setEditId(m.id)}>
-                  <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-                  এডিট
-                </button>
-                <button
-                  className="member-action alert"
-                  type="button"
-                  title="মেয়াদ অ্যালার্ট পাঠান"
-                  onClick={() => sendAlert(m)}
-                >
-                  <Icon d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9M10 21h4" />
-                  অ্যালার্ট
-                </button>
-                <button className="member-action pay" type="button" onClick={() => setPayId(m.id)}>
-                  <Icon d="M4 8h16v10H4zM4 12h16" />
-                  পেমেন্ট
-                </button>
-                <button
-                  className="member-action danger"
-                  type="button"
-                  onClick={() => setPendingDelete(m)}
-                >
-                  <Icon d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                  মুছুন
-                </button>
-              </div>
+              {(can('edit_members') || can('accept_payment') || can('delete_members')) && (
+                <div className="member-actions">
+                  {can('edit_members') && (
+                    <button className="member-action" type="button" onClick={() => setEditId(m.id)}>
+                      <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+                      এডিট
+                    </button>
+                  )}
+                  {can('accept_payment') && (
+                    <button className="member-action pay" type="button" onClick={() => setPayId(m.id)}>
+                      <Icon d="M4 8h16v10H4zM4 12h16" />
+                      পেমেন্ট
+                    </button>
+                  )}
+                  {can('delete_members') && (
+                    <button
+                      className="member-action danger"
+                      type="button"
+                      onClick={() => setPendingDelete(m)}
+                    >
+                      <Icon d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                      মুছুন
+                    </button>
+                  )}
+                </div>
+              )}
             </article>
           )
         })}

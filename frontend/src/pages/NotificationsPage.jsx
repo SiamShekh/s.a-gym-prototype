@@ -28,7 +28,6 @@ function formatWhen(iso) {
 
 export default function NotificationsPage() {
   const token = useSelector((s) => s.auth.token)
-  const [queue, setQueue] = useState(null)
   const [logs, setLogs] = useState([])
   const [pagination, setPagination] = useState(null)
   const [page, setPage] = useState(1)
@@ -37,11 +36,7 @@ export default function NotificationsPage() {
   const load = async (p = page) => {
     setLoading(true)
     try {
-      const [q, h] = await Promise.all([
-        api('/notifications/queue', { token }),
-        api(`/notifications/history?page=${p}&limit=30`, { token }),
-      ])
-      setQueue(q.queue || q.preview || null)
+      const h = await api(`/notifications/history?page=${p}&limit=30`, { token })
       setLogs(h.logs || [])
       setPagination(h.pagination || null)
     } catch {
@@ -56,56 +51,8 @@ export default function NotificationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, page])
 
-  const sections = queue?.sections || []
-  const todaySent = logs.filter((l) => {
-    if (!l.createdAt) return false
-    const day = new Date(l.createdAt).toDateString()
-    return day === new Date().toDateString() && (l.status === 'sent' || l.status === 'dry_run')
-  }).length
-
   return (
     <div className="stack">
-      <section className="banner">
-        <strong>SMS অটো-নোটিফিকেশন</strong>
-        <p className="light" style={{ margin: '4px 0 0', fontSize: 12 }}>
-          প্রতিদিন স্বয়ংক্রিয়ভাবে পাঠানো হয় (Asia/Dhaka)। শুক্রবার বন্ধ।
-          ম্যানুয়াল অ্যালার্ট বাটন নেই — নিচে হিস্টোরি দেখুন।
-        </p>
-        <div className="notify-status-row">
-          <span className="notify-pill">
-            {queue?.smsEnabled ? 'SMS চালু' : 'ড্রাই-রান মোড'}
-          </span>
-          <span className="notify-pill">
-            লিমিট {queue?.maxChars || 70} অক্ষর
-          </span>
-          {queue?.skipToday ? (
-            <span className="notify-pill danger">আজ স্কিপ (শুক্রবার)</span>
-          ) : (
-            <span className="notify-pill">আজ ক্রন চলবে</span>
-          )}
-        </div>
-      </section>
-
-      <section className="card bg-base-100">
-        <h2 className="section-title">আজকের কিউ (অটো)</h2>
-        <p className="light" style={{ fontSize: 12, margin: '0 0 12px' }}>
-          ক্রন এই গ্রুপগুলো থেকে পাঠাবে — প্রতি স্টেজে একবার, মেয়াদ শেষের ৭ দিন পর আর পাঠাবে না।
-        </p>
-        {loading && !queue && <p className="empty">লোড হচ্ছে…</p>}
-        <div className="notify-queue-grid">
-          {sections.map((s) => (
-            <article className="notify-queue-card" key={s.key}>
-              <strong>{s.count}</strong>
-              <span>{s.title}</span>
-              <em>{s.hint}</em>
-            </article>
-          ))}
-        </div>
-        <div className="meta" style={{ marginTop: 12 }}>
-          কিউতে মোট {queue?.total ?? 0} জন · আজকের লগে পাঠানো/ড্রাই-রান ≈ {todaySent}
-        </div>
-      </section>
-
       <section>
         <div className="section-label">মেসেজ হিস্টোরি</div>
         {loading && !logs.length && <p className="empty">লোড হচ্ছে…</p>}

@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 import ThemeToggle from '../components/ThemeToggle'
 import ProfileSheet from '../components/ProfileSheet'
 import { logout } from '../store/authSlice'
-import { downloadCsv } from '../api/client'
+import { hasPermission } from '../lib/permissions'
 
 function Icon({ d }) {
   return (
@@ -16,18 +15,12 @@ function Icon({ d }) {
 }
 
 const OPS = [
-  ['/members', 'সদস্য', 'খুঁজুন, এডিট ও পেমেন্ট', 'M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM20 19v-1a3.5 3.5 0 0 0-2.5-3.35M16.5 4.13a3.5 3.5 0 0 1 0 6.74'],
-  ['/due', 'বকেয়া', 'পেমেন্ট বাকি ও মেয়াদ শেষ', 'M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01'],
-  ['/payments', 'পেমেন্ট', 'সব পেমেন্ট হিস্টোরি', 'M4 8h16v10H4zM4 12h16'],
-  ['/expenses', 'খরচ', 'ভাড়া, বেতন ও অন্যান্য', 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'],
-  ['/notifications', 'নোটিফিকেশন', 'মেয়াদ সতর্কতা পাঠান', 'M6 9a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9M10 21h4'],
-  ['/actions', 'অ্যাকশন লগ', 'আপনার কাজের হিসাব', 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8'],
-]
-
-const EXPORTS = [
-  ['/export/members', 'sa-gym-members.csv', 'সদস্য', 'Members'],
-  ['/export/payments', 'sa-gym-payments.csv', 'পেমেন্ট', 'Payments'],
-  ['/export/expenses', 'sa-gym-expenses.csv', 'খরচ', 'Expenses'],
+  ['/members', 'সদস্য', 'খুঁজুন, এডিট ও পেমেন্ট', 'M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM20 19v-1a3.5 3.5 0 0 0-2.5-3.35M16.5 4.13a3.5 3.5 0 0 1 0 6.74', 'view_members'],
+  ['/due', 'বকেয়া', 'পেমেন্ট বাকি সদস্য', 'M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01', 'view_members'],
+  ['/payments', 'পেমেন্ট', 'সব পেমেন্ট হিস্টোরি', 'M4 8h16v10H4zM4 12h16', 'view_payments'],
+  ['/expenses', 'খরচ', 'ভাড়া, বেতন ও অন্যান্য', 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'manage_expenses'],
+  ['/notifications', 'নোটিফিকেশন', 'মেয়াদ সতর্কতা পাঠান', 'M6 9a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9M10 21h4', 'send_notifications'],
+  ['/actions', 'অ্যাকশন লগ', 'আপনার কাজের হিসাব', 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8', 'view_actions'],
 ]
 
 function initialOf(name) {
@@ -38,20 +31,12 @@ function initialOf(name) {
 export default function MorePage() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const token = useSelector((s) => s.auth.token)
   const adminName = useSelector((s) => s.auth.adminName)
   const adminRole = useSelector((s) => s.auth.adminRole)
+  const permissions = useSelector((s) => s.auth.permissions)
   const isOwner = adminRole === 'owner'
+  const can = (key) => hasPermission(adminRole, permissions, key)
   const [profileOpen, setProfileOpen] = useState(false)
-
-  const exportFile = async (path, filename) => {
-    try {
-      await downloadCsv(path, filename, token)
-      toast.success('ডাউনলোড শুরু হয়েছে')
-    } catch {
-      toast.error('এক্সপোর্ট ব্যর্থ')
-    }
-  }
 
   return (
     <div className="more-page">
@@ -77,7 +62,7 @@ export default function MorePage() {
       <section className="more-panel">
         <div className="more-panel-head">মেনু</div>
         <div className="more-menu">
-          {OPS.map(([to, title, desc, icon]) => (
+          {OPS.filter(([, , , , perm]) => can(perm)).map(([to, title, desc, icon]) => (
             <Link key={to} to={to} className="more-item">
               <span className="more-item-icon">
                 <Icon d={icon} />
@@ -133,23 +118,6 @@ export default function MorePage() {
             </span>
             <ThemeToggle />
           </div>
-        </div>
-      </section>
-
-      <section className="more-panel">
-        <div className="more-panel-head">ব্যাকআপ · Excel CSV</div>
-        <div className="more-export">
-          {EXPORTS.map(([path, filename, bn, en]) => (
-            <button
-              key={path}
-              type="button"
-              className="more-export-btn"
-              onClick={() => exportFile(path, filename)}
-            >
-              <strong>{bn}</strong>
-              <span>{en}</span>
-            </button>
-          ))}
         </div>
       </section>
 

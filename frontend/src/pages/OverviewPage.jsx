@@ -50,8 +50,8 @@ export default function OverviewPage() {
   const cards = [
     [money(r.monthRevenue), 'এই মাসের আয়', `খরচ ${money(r.monthExpenses)}`, 'tone-content'],
     [money(r.monthProfit), 'এই মাসের লাভ', r.monthProfit < 0 ? 'খরচ বেশি' : 'আয় − খরচ', r.monthProfit < 0 ? 'tone-primary' : 'tone-content'],
-    [String(r.totalMembers), 'মোট সদস্য', `${r.active} জন সক্রিয়`, 'tone-content'],
-    [String(r.unpaid), 'বকেয়া / ডিউ', `${r.expired} মেয়াদ শেষ`, 'tone-primary'],
+    [String(r.totalMembers), 'মোট সদস্য', `${r.active} জন`, 'tone-content'],
+    [String(r.unpaid), 'বকেয়া', `${r.expired} মেয়াদ শেষ`, 'tone-primary'],
   ]
 
   return (
@@ -73,7 +73,7 @@ export default function OverviewPage() {
         </Link>
         <Link className="card link-card" to="/due">
           <strong>বকেয়া সদস্য</strong>
-          <span>{r.unpaid} জন ফলোআপ দরকার</span>
+          <span>{r.unpaid} জন</span>
         </Link>
         <Link className="card link-card" to="/expenses">
           <strong>খরচ</strong>
@@ -97,7 +97,7 @@ export default function OverviewPage() {
             ))}
           </div>
         </section>
-        <section className="card bg-base-100 text-base-content" style={{ marginTop: 16 }}>
+        <section className="card bg-base-100 text-base-content h-full" >
           <h2 className="section-title">প্যাকেজ বিতরণ</h2>
           {r.planDistribution.map((p) => {
             const pct = totalPlans === 0 ? 0 : Math.round((p.count * 100) / totalPlans)
@@ -115,10 +115,10 @@ export default function OverviewPage() {
               </div>
             )
           })}
-          <div className="section-label" style={{ marginTop: 16 }}>সদস্য অবস্থা</div>
+          {/* <div className="section-label" style={{ marginTop: 16 }}>সদস্য অবস্থা</div>
           <div className="meta">
             সক্রিয় {r.active} · শেষ হচ্ছে {r.expiring} · মেয়াদ শেষ {r.expired}
-          </div>
+          </div> */}
         </section>
       </div>
     </>

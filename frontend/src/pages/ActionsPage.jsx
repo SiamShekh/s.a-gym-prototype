@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'sonner'
+import { today } from '../lib/memberUtils'
 import { fetchActions } from '../store/actionsSlice'
+
+const PAGE_SIZE = 30
 
 const FILTERS = [
   ['all', 'সব'],
@@ -14,6 +17,13 @@ const FILTERS = [
   ['create_admin', 'অ্যাডমিন'],
   ['update_profile', 'প্রোফাইল'],
   ['login', 'লগইন'],
+]
+
+const DATE_PRESETS = [
+  ['all', 'সব তারিখ'],
+  ['today', 'আজ'],
+  ['7d', '৭ দিন'],
+  ['30d', '৩০ দিন'],
 ]
 
 const TYPE_META = {
@@ -53,7 +63,7 @@ const TYPE_META = {
     icon: 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',
   },
   delete_expense: {
-    label: 'খরচ মুছা',
+    label: 'খরচ ডিলিট',
     tone: 'delete',
     icon: 'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6',
   },
@@ -67,6 +77,34 @@ const TYPE_META = {
     tone: 'update',
     icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
   },
+}
+
+function daysAgoIso(days) {
+  const d = new Date()
+  d.setDate(d.getDate() - days)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function rangeForPreset(key) {
+  if (key === 'today') return { from: today(), to: today() }
+  if (key === '7d') return { from: daysAgoIso(6), to: today() }
+  if (key === '30d') return { from: daysAgoIso(29), to: today() }
+  return { from: '', to: '' }
+}
+
+function activePreset(from, to) {
+  for (const [key] of DATE_PRESETS) {
+    if (key === 'all') {
+      if (!from && !to) return 'all'
+      continue
+    }
+    const range = rangeForPreset(key)
+    if (range.from === from && range.to === to) return key
+  }
+  return 'custom'
 }
 
 function formatWhen(iso) {
@@ -85,14 +123,14 @@ function formatWhen(iso) {
 function groupKey(iso) {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return 'অন্যান্য'
-  const today = new Date()
+  const todayDate = new Date()
   const yday = new Date()
-  yday.setDate(today.getDate() - 1)
+  yday.setDate(todayDate.getDate() - 1)
   const sameDay = (a, b) =>
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
-  if (sameDay(d, today)) return 'আজ'
+  if (sameDay(d, todayDate)) return 'আজ'
   if (sameDay(d, yday)) return 'গতকাল'
   return d.toLocaleDateString('bn-BD', {
     day: 'numeric',
@@ -124,8 +162,9 @@ export default function ActionsPage() {
   const list = useSelector((s) => s.actions.list)
   const status = useSelector((s) => s.actions.status)
   const pagination = useSelector((s) => s.actions.pagination)
-  const adminName = useSelector((s) => s.auth.adminName)
   const [type, setType] = useState('all')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
   const [page, setPage] = useState(1)
 
   useEffect(() => {
@@ -135,10 +174,10 @@ export default function ActionsPage() {
   }, [pagination, page])
 
   useEffect(() => {
-    dispatch(fetchActions({ page, limit: 30, type }))
+    dispatch(fetchActions({ page, limit: PAGE_SIZE, type, from, to }))
       .unwrap()
       .catch(() => toast.error('অ্যাকশন লোড ব্যর্থ'))
-  }, [dispatch, page, type])
+  }, [dispatch, page, type, from, to])
 
   const groups = []
   for (const action of list) {
@@ -149,24 +188,20 @@ export default function ActionsPage() {
   }
 
   const total = pagination?.total ?? list.length
+  const totalPages = pagination?.totalPages ?? 1
+  const rangeFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const rangeTo = Math.min(page * PAGE_SIZE, total)
+  const datePreset = activePreset(from, to)
+
+  const applyPreset = (key) => {
+    const range = rangeForPreset(key)
+    setFrom(range.from)
+    setTo(range.to)
+    setPage(1)
+  }
 
   return (
     <div className="stack">
-      <section className="actions-hero">
-        <div>
-          <div className="actions-hero-kicker">Activity log</div>
-          <h2 className="actions-hero-title">আপনার অ্যাকশন</h2>
-          <p className="light" style={{ margin: '6px 0 0', fontSize: 13 }}>
-            {adminName ? `${adminName} · ` : ''}
-            এখানে লগইন, সদস্য ও পেমেন্টসহ সব কাজের হিসাব থাকবে
-          </p>
-        </div>
-        <div className="actions-hero-stat">
-          <strong>{total}</strong>
-          <span>মোট রেকর্ড</span>
-        </div>
-      </section>
-
       <div className="pills">
         {FILTERS.map(([key, label]) => (
           <button
@@ -183,10 +218,68 @@ export default function ActionsPage() {
         ))}
       </div>
 
+      <div className="pills">
+        {DATE_PRESETS.map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`pill${datePreset === key ? ' active' : ''}`}
+            onClick={() => applyPreset(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="date-filters">
+        <label className="date-filter">
+          <span>থেকে</span>
+          <input
+            className="field"
+            type="date"
+            value={from}
+            max={to || undefined}
+            onChange={(e) => {
+              setFrom(e.target.value)
+              setPage(1)
+            }}
+          />
+        </label>
+        <label className="date-filter">
+          <span>পর্যন্ত</span>
+          <input
+            className="field"
+            type="date"
+            value={to}
+            min={from || undefined}
+            onChange={(e) => {
+              setTo(e.target.value)
+              setPage(1)
+            }}
+          />
+        </label>
+        {(from || to) && (
+          <button
+            className="btn-ghost"
+            type="button"
+            onClick={() => applyPreset('all')}
+          >
+            মুছুন
+          </button>
+        )}
+      </div>
+
+      <div className="page-meta">
+        <span className="light">
+          {total === 0 ? 'কোনো অ্যাকশন নেই' : `${rangeFrom}–${rangeTo} / মোট ${total}`}
+        </span>
+        {status === 'loading' && <span className="light">লোড হচ্ছে…</span>}
+      </div>
+
       {status === 'loading' && !list.length && <p className="empty">লোড হচ্ছে…</p>}
       {status === 'error' && <p className="empty">লোড ব্যর্থ — আবার চেষ্টা করুন</p>}
       {status !== 'loading' && !list.length && (
-        <p className="empty">এখনো কোনো অ্যাকশন নেই। সদস্য বা পেমেন্ট করলে এখানে দেখাবে।</p>
+        <p className="empty">এই ফিল্টারে কোনো অ্যাকশন নেই।</p>
       )}
 
       {groups.map((group) => (
@@ -216,23 +309,23 @@ export default function ActionsPage() {
         </section>
       ))}
 
-      {pagination && pagination.totalPages > 1 && (
+      {totalPages > 1 && (
         <div className="pagination">
           <button
             className="btn-ghost"
             type="button"
-            disabled={page <= 1}
+            disabled={page <= 1 || status === 'loading'}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
           >
             আগে
           </button>
           <div className="pagination-status">
-            {pagination.page} / {pagination.totalPages}
+            পৃষ্ঠা {page} / {totalPages}
           </div>
           <button
             className="btn-ghost"
             type="button"
-            disabled={page >= pagination.totalPages}
+            disabled={page >= totalPages || status === 'loading'}
             onClick={() => setPage((p) => p + 1)}
           >
             পরে

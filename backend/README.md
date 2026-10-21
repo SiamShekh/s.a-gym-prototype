@@ -34,7 +34,7 @@ Default seeded admin:
 |--------|------|------|-------------|
 | GET | `/api/health` | no | Health check |
 | POST | `/api/auth/login` | no | `{ phone, password }` → `{ token, admin }` |
-| GET | `/api/members` | Bearer | List (`page`, `limit`, `q`, `status=active\|expiring\|expired\|unpaid\|due`) |
+| GET | `/api/members` | Bearer | List (`page`, `limit`, `q`, `status=active\|expiring\|expired\|unpaid`) |
 | GET | `/api/members/:id` | Bearer | Get one |
 | POST | `/api/members` | Bearer | Create (+ auto `SA-XXXX` code, payment if paid) |
 | PUT | `/api/members/:id` | Bearer | Update |
@@ -49,9 +49,6 @@ Default seeded admin:
 | GET | `/api/admins` | Owner | List admins |
 | POST | `/api/admins` | Owner | Create admin |
 | PATCH | `/api/admins/:id/active` | Owner | Activate / deactivate |
-| GET | `/api/export/members` | Bearer | CSV download |
-| GET | `/api/export/payments` | Bearer | CSV download |
-| GET | `/api/export/expenses` | Bearer | CSV download |
 | GET | `/api/auth/me` | Bearer | Current admin |
 | PATCH | `/api/auth/profile` | Bearer | Update name / password |
 | GET | `/api/notifications/queue` | Bearer | Today's auto SMS queue |

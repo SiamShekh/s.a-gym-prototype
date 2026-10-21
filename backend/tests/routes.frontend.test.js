@@ -17,7 +17,7 @@ describe('Frontend API contract', () => {
     expiry: '2026-10-31',
   };
 
-  it('covers auth → members → pay → payments → expenses → reports → actions → admins → export', async () => {
+  it('covers auth → members → pay → payments → expenses → reports → actions → admins', async () => {
     await createAdmin({ phone: '01746933966', name: 'Owner', role: 'owner' });
     const login = await loginAs('01746933966', 'secret123');
     expect(login.status).toBe(200);
@@ -34,7 +34,6 @@ describe('Frontend API contract', () => {
     const id = created.body.member.id;
 
     expect((await request(app).get('/api/members?page=1&limit=20').set(headers)).status).toBe(200);
-    expect((await request(app).get('/api/members?status=due').set(headers)).status).toBe(200);
     expect((await request(app).get('/api/members?status=unpaid').set(headers)).status).toBe(200);
     expect((await request(app).get(`/api/members/${id}`).set(headers)).status).toBe(200);
 
@@ -85,12 +84,6 @@ describe('Frontend API contract', () => {
       .send({ isActive: false });
     expect(toggle.status).toBe(200);
     expect(toggle.body.admin.isActive).toBe(false);
-
-    for (const path of ['/api/export/members', '/api/export/payments', '/api/export/expenses']) {
-      const csv = await request(app).get(path).set(headers);
-      expect(csv.status).toBe(200);
-      expect(csv.headers['content-type']).toMatch(/csv/);
-    }
 
     expect(
       (await request(app).delete(`/api/expenses/${expense.body.expense.id}`).set(headers)).status

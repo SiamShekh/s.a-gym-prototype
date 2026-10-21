@@ -11,15 +11,19 @@ import {
 } from '../lib/memberUtils'
 import { fetchMembers } from '../store/membersSlice'
 import PaymentSheet from '../components/PaymentSheet'
+import { hasPermission } from '../lib/permissions'
 
 export default function DuePage() {
   const dispatch = useDispatch()
   const list = useSelector((s) => s.members.list)
   const status = useSelector((s) => s.members.status)
+  const adminRole = useSelector((s) => s.auth.adminRole)
+  const permissions = useSelector((s) => s.auth.permissions)
+  const canPay = hasPermission(adminRole, permissions, 'accept_payment')
   const [payId, setPayId] = useState(null)
 
   const loadDue = () =>
-    dispatch(fetchMembers({ status: 'due', limit: 100 }))
+    dispatch(fetchMembers({ status: 'unpaid', limit: 100 }))
       .unwrap()
       .catch(() => toast.error('ডেটা লোড ব্যর্থ'))
 
@@ -41,9 +45,9 @@ export default function DuePage() {
   return (
     <div className="stack">
       <section className="banner">
-        <strong>বকেয়া / ডিউ সদস্য</strong>
+        <strong>বকেয়া সদস্য</strong>
         <p className="light" style={{ margin: '4px 0 0', fontSize: 12 }}>
-          যাদের পেমেন্ট বাকি বা মেয়াদ শেষ — রিনিউ করুন
+          যাদের পেমেন্ট বাকি — রিনিউ করুন
         </p>
       </section>
 
@@ -73,9 +77,11 @@ export default function DuePage() {
                 <button className="btn-ghost" type="button" onClick={() => remind(m)}>
                   রিমাইন্ড
                 </button>
-                <button className="btn-red" type="button" onClick={() => setPayId(m.id)}>
-                  পেমেন্ট
-                </button>
+                {canPay && (
+                  <button className="btn-red" type="button" onClick={() => setPayId(m.id)}>
+                    পেমেন্ট
+                  </button>
+                )}
               </div>
             </article>
           )

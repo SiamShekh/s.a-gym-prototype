@@ -56,4 +56,32 @@ describe('Actions API', () => {
     expect(res.status).toBe(200);
     expect(res.body.actions.every((a) => a.type === 'create_member')).toBe(true);
   });
+
+  it('filters actions by date range and paginates', async () => {
+    const headers = await authHeader();
+    await request(app).post('/api/members').set(headers).send({
+      ...validMember,
+      phone: '01712345679',
+    });
+
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    const day = `${y}-${m}-${d}`;
+
+    const inRange = await request(app)
+      .get(`/api/actions?from=${day}&to=${day}&page=1&limit=10`)
+      .set(headers);
+    expect(inRange.status).toBe(200);
+    expect(inRange.body.actions.length).toBeGreaterThan(0);
+    expect(inRange.body.pagination.page).toBe(1);
+    expect(inRange.body.pagination.limit).toBe(10);
+
+    const outOfRange = await request(app)
+      .get('/api/actions?from=2020-01-01&to=2020-01-02')
+      .set(headers);
+    expect(outOfRange.status).toBe(200);
+    expect(outOfRange.body.actions).toHaveLength(0);
+  });
 });

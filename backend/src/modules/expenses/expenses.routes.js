@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { requireAuth } from '../../middleware/auth.js';
+import { requireAuth, requirePermission } from '../../middleware/auth.js';
 import { validate } from '../../middleware/validate.js';
 import { expensesController } from './expenses.controller.js';
 import { createExpenseSchema } from './expenses.validation.js';
 
 const router = Router();
-router.use(requireAuth);
+router.use(requireAuth, requirePermission('manage_expenses'));
 router.get('/', asyncHandler((req, res) => expensesController.list(req, res)));
 router.post(
   '/',

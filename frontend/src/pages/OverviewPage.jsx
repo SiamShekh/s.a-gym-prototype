@@ -1,32 +1,17 @@
-import { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { money } from '../lib/memberUtils'
-import { api } from '../api/client'
+import { useGetOverviewQuery } from '../api/saApi'
 
 export default function OverviewPage() {
-  const token = useSelector((s) => s.auth.token)
-  const [report, setReport] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { data: report, isLoading, isError, isFetching } = useGetOverviewQuery()
 
   useEffect(() => {
-    let alive = true
-    setLoading(true)
-    api('/reports/overview', { token })
-      .then((data) => {
-        if (alive) setReport(data.report)
-      })
-      .catch(() => toast.error('রিপোর্ট লোড ব্যর্থ'))
-      .finally(() => {
-        if (alive) setLoading(false)
-      })
-    return () => {
-      alive = false
-    }
-  }, [token])
+    if (isError) toast.error('রিপোর্ট লোড ব্যর্থ')
+  }, [isError])
 
-  if (loading && !report) {
+  if ((isLoading || isFetching) && !report) {
     return <p className="empty">লোড হচ্ছে…</p>
   }
 
@@ -97,7 +82,7 @@ export default function OverviewPage() {
             ))}
           </div>
         </section>
-        <section className="card bg-base-100 text-base-content h-full" >
+        <section className="card bg-base-100 text-base-content h-full">
           <h2 className="section-title">প্যাকেজ বিতরণ</h2>
           {r.planDistribution.map((p) => {
             const pct = totalPlans === 0 ? 0 : Math.round((p.count * 100) / totalPlans)
@@ -115,10 +100,6 @@ export default function OverviewPage() {
               </div>
             )
           })}
-          {/* <div className="section-label" style={{ marginTop: 16 }}>সদস্য অবস্থা</div>
-          <div className="meta">
-            সক্রিয় {r.active} · শেষ হচ্ছে {r.expiring} · মেয়াদ শেষ {r.expired}
-          </div> */}
         </section>
       </div>
     </>

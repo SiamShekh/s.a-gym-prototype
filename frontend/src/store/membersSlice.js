@@ -1,21 +1,12 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { api } from '../api/client'
-
-function toQuery(params = {}) {
-  const search = new URLSearchParams()
-  if (params.page != null) search.set('page', String(params.page))
-  if (params.limit != null) search.set('limit', String(params.limit))
-  if (params.q) search.set('q', params.q)
-  if (params.status && params.status !== 'all') search.set('status', params.status)
-  const qs = search.toString()
-  return qs ? `?${qs}` : ''
-}
+import { saApi } from '../api/saApi'
 
 export const fetchMembers = createAsyncThunk(
   'members/fetch',
-  async (params = {}, { getState }) => {
-    const { token } = getState().auth
-    const data = await api(`/members${toQuery(params)}`, { token })
+  async (params = {}, { dispatch }) => {
+    const data = await dispatch(
+      saApi.endpoints.getMembers.initiate(params, { forceRefetch: true }),
+    ).unwrap()
     return {
       members: data.members,
       pagination: data.pagination || null,
@@ -31,38 +22,43 @@ async function refetchCurrent(dispatch, getState) {
 
 export const saveMember = createAsyncThunk(
   'members/save',
-  async ({ member, editing }, { getState, dispatch }) => {
-    const { token } = getState().auth
+  async ({ member, editing }, { dispatch, getState }) => {
     if (editing) {
-      await api(`/members/${member.id}`, { method: 'PUT', body: member, token })
+      await dispatch(
+        saApi.endpoints.updateMember.initiate({ ...member, id: member.id }),
+      ).unwrap()
     } else {
-      await api('/members', { method: 'POST', body: { ...member, id: '' }, token })
+      await dispatch(saApi.endpoints.createMember.initiate(member)).unwrap()
     }
     await refetchCurrent(dispatch, getState)
     return { name: member.name, editing }
   },
 )
 
-export const deleteMember = createAsyncThunk('members/delete', async (member, { getState, dispatch }) => {
-  const { token } = getState().auth
-  await api(`/members/${member.id}`, { method: 'DELETE', token })
-  await refetchCurrent(dispatch, getState)
-  return member.name
-})
+export const deleteMember = createAsyncThunk(
+  'members/delete',
+  async (member, { dispatch, getState }) => {
+    await dispatch(saApi.endpoints.deleteMember.initiate(member.id)).unwrap()
+    await refetchCurrent(dispatch, getState)
+    return member.name
+  },
+)
 
 export const processPayment = createAsyncThunk(
   'members/pay',
-  async ({ memberId, plan, method, amount }, { getState, dispatch }) => {
-    const { token } = getState().auth
+  async ({ memberId, plan, method, amount }, { dispatch, getState }) => {
     const member = getState().members.list.find((m) => m.id === memberId)
     if (!member) throw new Error('missing')
     const paidAmount = Number(amount)
     if (!Number.isFinite(paidAmount) || paidAmount <= 0) throw new Error('amount')
-    const data = await api(`/members/${member.id}/pay`, {
-      method: 'POST',
-      body: { plan, method, amount: paidAmount },
-      token,
-    })
+    const data = await dispatch(
+      saApi.endpoints.payMember.initiate({
+        id: member.id,
+        plan,
+        method,
+        amount: paidAmount,
+      }),
+    ).unwrap()
     await refetchCurrent(dispatch, getState)
     return {
       name: data.member?.name || member.name,

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
 import { toast } from 'sonner'
-import { api } from '../api/client'
 import { money, planLabel } from '../lib/memberUtils'
+import { useGetPaymentsQuery } from '../api/saApi'
 
 const METHODS = [
   ['all', 'সব'],
@@ -19,34 +18,22 @@ function formatWhen(iso) {
 }
 
 export default function PaymentsPage() {
-  const token = useSelector((s) => s.auth.token)
   const [method, setMethod] = useState('all')
   const [page, setPage] = useState(1)
-  const [rows, setRows] = useState([])
-  const [totalAmount, setTotalAmount] = useState(0)
-  const [pagination, setPagination] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { data, isLoading, isError, isFetching } = useGetPaymentsQuery({
+    page,
+    limit: 30,
+    method,
+  })
 
   useEffect(() => {
-    let alive = true
-    setLoading(true)
-    const qs = new URLSearchParams({ page: String(page), limit: '30' })
-    if (method !== 'all') qs.set('method', method)
-    api(`/payments?${qs}`, { token })
-      .then((data) => {
-        if (!alive) return
-        setRows(data.payments || [])
-        setTotalAmount(data.totalAmount || 0)
-        setPagination(data.pagination)
-      })
-      .catch(() => toast.error('পেমেন্ট লোড ব্যর্থ'))
-      .finally(() => {
-        if (alive) setLoading(false)
-      })
-    return () => {
-      alive = false
-    }
-  }, [token, page, method])
+    if (isError) toast.error('পেমেন্ট লোড ব্যর্থ')
+  }, [isError])
+
+  const rows = data?.payments || []
+  const totalAmount = data?.totalAmount || 0
+  const pagination = data?.pagination
+  const loading = isLoading || isFetching
 
   return (
     <div className="stack">

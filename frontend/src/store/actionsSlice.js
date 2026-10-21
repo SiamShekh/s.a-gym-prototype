@@ -1,22 +1,12 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { api } from '../api/client'
-
-function toQuery(params = {}) {
-  const search = new URLSearchParams()
-  if (params.page != null) search.set('page', String(params.page))
-  if (params.limit != null) search.set('limit', String(params.limit))
-  if (params.type && params.type !== 'all') search.set('type', params.type)
-  if (params.from) search.set('from', params.from)
-  if (params.to) search.set('to', params.to)
-  const qs = search.toString()
-  return qs ? `?${qs}` : ''
-}
+import { saApi } from '../api/saApi'
 
 export const fetchActions = createAsyncThunk(
   'actions/fetch',
-  async (params = {}, { getState }) => {
-    const { token } = getState().auth
-    const data = await api(`/actions${toQuery(params)}`, { token })
+  async (params = {}, { dispatch }) => {
+    const data = await dispatch(
+      saApi.endpoints.getActions.initiate(params, { forceRefetch: true }),
+    ).unwrap()
     return {
       actions: data.actions,
       pagination: data.pagination || null,

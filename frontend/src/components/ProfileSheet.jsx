@@ -1,18 +1,18 @@
 import { useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'sonner'
-import { api } from '../api/client'
+import { useUpdateProfileMutation } from '../api/saApi'
 import { updateSessionProfile } from '../store/authSlice'
 import Overlay from './Overlay'
 
 export default function ProfileSheet({ onClose }) {
   const dispatch = useDispatch()
-  const token = useSelector((s) => s.auth.token)
   const adminName = useSelector((s) => s.auth.adminName)
+  const [updateProfile, { isLoading }] = useUpdateProfileMutation()
   const {
     register,
     handleSubmit,
-    formState: { isSubmitting, errors },
+    formState: { errors },
   } = useForm({
     defaultValues: {
       name: adminName || '',
@@ -39,7 +39,7 @@ export default function ProfileSheet({ onClose }) {
     }
 
     try {
-      const data = await api('/auth/profile', { method: 'PATCH', token, body })
+      const data = await updateProfile(body).unwrap()
       dispatch(updateSessionProfile({ adminName: data.admin?.name }))
       toast.success(values.newPassword ? 'পাসওয়ার্ড আপডেট হয়েছে' : 'প্রোফাইল আপডেট হয়েছে')
       onClose()
@@ -79,7 +79,7 @@ export default function ProfileSheet({ onClose }) {
         <label className="lbl">নতুন পাসওয়ার্ড আবার</label>
         <input className="field" type="password" autoComplete="new-password" {...register('confirmPassword')} />
 
-        <button className="btn-red block" type="submit" disabled={isSubmitting} style={{ marginTop: 16 }}>
+        <button className="btn-red block" type="submit" disabled={isLoading} style={{ marginTop: 16 }}>
           সংরক্ষণ
         </button>
       </form>

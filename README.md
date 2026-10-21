@@ -35,24 +35,25 @@ npm run dev:backend
 npm run dev:web
 ```
 
-## Railway deploy
+## Fix login 405 on Railway
 
-### Option A — one service (recommended)
+The dashboard static host cannot handle `POST /api/*`. Point the frontend at your **backend** URL.
 
-Deploy the **repo root** with `railway.toml` (builds `frontend/dist`, Express serves it + `/api`). Browser can keep using `/api` — no `VITE_API_URL` needed.
-
-### Option B — two services (static frontend + API)
-
-On the **frontend** service set a **build-time** variable, then redeploy:
+1. Deploy **backend** as its own Railway service  
+   - Root Directory: `backend`  
+   - Start: `npm start`  
+   - Env: `MONGODB_URI`, `JWT_SECRET`, `CORS_ORIGIN=*` (or your dashboard URL)
+2. Copy the backend public URL, e.g. `https://xxxxx.up.railway.app`
+3. On the **frontend** service → Variables (build-time):
 
 ```bash
-VITE_API_URL=https://YOUR-API.up.railway.app/api
+VITE_API_URL=https://xxxxx.up.railway.app/api
 ```
 
-Without this, `POST /api/auth/login` hits the static host and returns **405 Method Not Allowed** (`Allow: GET, HEAD`).
+4. **Redeploy frontend** (Vite bakes this in at build time)
 
-On the **backend** service (optional):
+Check:
 
 ```bash
-CORS_ORIGIN=https://dashboard-production-afb4.up.railway.app
+npm run smoke -- https://xxxxx.up.railway.app
 ```

@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useSelector } from 'react-redux'
 import { toast } from 'sonner'
-import { api } from '../api/client'
 import Overlay from '../components/Overlay'
 import { money, today } from '../lib/memberUtils'
+import {
+  useCreateExpenseMutation,
+  useDeleteExpenseMutation,
+  useGetExpensesQuery,
+} from '../api/saApi'
 
 const CATEGORIES = [
   ['rent', 'ভাড়া'],
@@ -24,13 +27,12 @@ function formatWhen(iso) {
 }
 
 export default function ExpensesPage() {
-  const token = useSelector((s) => s.auth.token)
-  const [rows, setRows] = useState([])
-  const [totalAmount, setTotalAmount] = useState(0)
   const [page, setPage] = useState(1)
-  const [pagination, setPagination] = useState(null)
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const { data, isLoading, isError, isFetching } = useGetExpensesQuery({ page, limit: 30 })
+  const [createExpense] = useCreateExpenseMutation()
+  const [deleteExpense] = useDeleteExpenseMutation()
+
   const {
     register,
     handleSubmit,
@@ -46,43 +48,28 @@ export default function ExpensesPage() {
     },
   })
 
-  const load = async (p = page) => {
-    setLoading(true)
-    try {
-      const data = await api(`/expenses?page=${p}&limit=30`, { token })
-      setRows(data.expenses || [])
-      setTotalAmount(data.totalAmount || 0)
-      setPagination(data.pagination)
-    } catch {
-      toast.error('খরচ লোড ব্যর্থ')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    load(page)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, page])
+    if (isError) toast.error('খরচ লোড ব্যর্থ')
+  }, [isError])
+
+  const rows = data?.expenses || []
+  const totalAmount = data?.totalAmount || 0
+  const pagination = data?.pagination
+  const loading = isLoading || isFetching
 
   const onSubmit = async (values) => {
     try {
-      await api('/expenses', {
-        method: 'POST',
-        token,
-        body: {
-          title: values.title,
-          amount: Number(values.amount),
-          category: values.category,
-          date: values.date,
-          note: values.note || '',
-        },
-      })
+      await createExpense({
+        title: values.title,
+        amount: Number(values.amount),
+        category: values.category,
+        date: values.date,
+        note: values.note || '',
+      }).unwrap()
       toast.success('খরচ যোগ হয়েছে')
       setOpen(false)
       reset({ title: '', amount: '', category: 'other', date: today(), note: '' })
       setPage(1)
-      await load(1)
     } catch {
       toast.error('খরচ যোগ ব্যর্থ')
     }
@@ -90,9 +77,8 @@ export default function ExpensesPage() {
 
   const remove = async (expense) => {
     try {
-      await api(`/expenses/${expense.id}`, { method: 'DELETE', token })
+      await deleteExpense(expense.id).unwrap()
       toast.success('খরচ মুছে ফেলা হয়েছে')
-      await load(page)
     } catch {
       toast.error('মুছতে ব্যর্থ')
     }

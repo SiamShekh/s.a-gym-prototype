@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import MemberFormSheet from './MemberFormSheet'
 import ProfileSheet from './ProfileSheet'
 import ThemeToggle from './ThemeToggle'
+import { baseApi } from '../api/baseApi'
 import { logout } from '../store/authSlice'
 import { hasPermission } from '../lib/permissions'
 
@@ -84,6 +85,7 @@ export default function Shell() {
             className="side-link side-link-btn is-danger"
             onClick={() => {
               dispatch(logout())
+              dispatch(baseApi.util.resetApiState())
               navigate('/login', { replace: true })
             }}
           >

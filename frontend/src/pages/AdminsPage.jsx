@@ -3,8 +3,14 @@ import { useForm } from 'react-hook-form'
 import { useSelector } from 'react-redux'
 import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { api } from '../api/client'
 import Overlay from '../components/Overlay'
+import {
+  useCreateAdminMutation,
+  useDeleteAdminMutation,
+  useGetAdminsQuery,
+  useSetAdminActiveMutation,
+  useUpdateAdminMutation,
+} from '../api/saApi'
 import {
   DEFAULT_STAFF_PERMISSIONS,
   PERMISSION_OPTIONS,
@@ -73,24 +79,29 @@ function PermissionChips({ permissions }) {
 }
 
 export default function AdminsPage() {
-  const token = useSelector((s) => s.auth.token)
   const role = useSelector((s) => s.auth.adminRole)
   const selfId = useSelector((s) => s.auth.adminId)
-  const [admins, setAdmins] = useState([])
   const [open, setOpen] = useState(false)
   const [editAdmin, setEditAdmin] = useState(null)
   const [pendingDelete, setPendingDelete] = useState(null)
-  const [deleting, setDeleting] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
+
+  const skip = role !== 'owner'
+  const { data: admins = [], isLoading, isError, error, isFetching } = useGetAdminsQuery(
+    undefined,
+    { skip },
+  )
+  const [createAdmin, { isLoading: creating }] = useCreateAdminMutation()
+  const [updateAdmin, { isLoading: updating }] = useUpdateAdminMutation()
+  const [deleteAdmin, { isLoading: deleting }] = useDeleteAdminMutation()
+  const [setAdminActive] = useSetAdminActiveMutation()
 
   const {
     register,
     handleSubmit,
     reset,
     watch,
-    formState: { isSubmitting },
   } = useForm({ defaultValues: emptyForm })
 
   const {
@@ -98,11 +109,17 @@ export default function AdminsPage() {
     handleSubmit: handleEditSubmit,
     reset: resetEdit,
     watch: watchEdit,
-    formState: { isSubmitting: isEditSubmitting },
   } = useForm({ defaultValues: emptyForm })
 
   const createRole = watch('role')
   const editRole = watchEdit('role')
+  const loading = isLoading || isFetching
+
+  useEffect(() => {
+    if (!isError || skip) return
+    if (error?.status === 403) toast.error('শুধু ওনার অ্যাক্সেস করতে পারবেন')
+    else toast.error('অ্যাডমিন লোড ব্যর্থ')
+  }, [isError, error, skip])
 
   const stats = useMemo(() => {
     const owners = admins.filter((a) => a.role === 'owner').length
@@ -125,24 +142,6 @@ export default function AdminsPage() {
     })
   }, [admins, filter, query])
 
-  const load = async () => {
-    setLoading(true)
-    try {
-      const data = await api('/admins', { token })
-      setAdmins(data.admins || [])
-    } catch (err) {
-      if (err.status === 403) toast.error('শুধু ওনার অ্যাক্সেস করতে পারবেন')
-      else toast.error('অ্যাডমিন লোড ব্যর্থ')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (role === 'owner') load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, role])
-
   if (role && role !== 'owner') {
     return <Navigate to="/more" replace />
   }
@@ -158,11 +157,10 @@ export default function AdminsPage() {
       if (values.role !== 'owner') {
         body.permissions = selectedPermissions(values)
       }
-      await api('/admins', { method: 'POST', token, body })
+      await createAdmin(body).unwrap()
       toast.success('নতুন অ্যাডমিন তৈরি হয়েছে')
       setOpen(false)
       reset(emptyForm)
-      await load()
     } catch (err) {
       toast.error(err.data?.message || 'তৈরি ব্যর্থ')
     }
@@ -185,6 +183,7 @@ export default function AdminsPage() {
   const onEdit = async (values) => {
     try {
       const body = {
+        id: editAdmin.id,
         name: values.name,
         phone: values.phone.replace(/[\s-]/g, ''),
         role: values.role,
@@ -195,10 +194,9 @@ export default function AdminsPage() {
       if (values.role !== 'owner') {
         body.permissions = selectedPermissions(values)
       }
-      await api(`/admins/${editAdmin.id}`, { method: 'PUT', token, body })
+      await updateAdmin(body).unwrap()
       toast.success('অ্যাডমিন আপডেট হয়েছে')
       setEditAdmin(null)
-      await load()
     } catch (err) {
       toast.error(err.data?.message || 'আপডেট ব্যর্থ')
     }
@@ -206,28 +204,19 @@ export default function AdminsPage() {
 
   const confirmDelete = async () => {
     if (!pendingDelete) return
-    setDeleting(true)
     try {
-      await api(`/admins/${pendingDelete.id}`, { method: 'DELETE', token })
+      await deleteAdmin(pendingDelete.id).unwrap()
       toast.success(`${pendingDelete.name} মুছে ফেলা হয়েছে`)
       setPendingDelete(null)
-      await load()
     } catch (err) {
       toast.error(err.data?.message || 'ডিলিট ব্যর্থ')
-    } finally {
-      setDeleting(false)
     }
   }
 
   const toggle = async (admin) => {
     try {
-      await api(`/admins/${admin.id}/active`, {
-        method: 'PATCH',
-        token,
-        body: { isActive: !admin.isActive },
-      })
+      await setAdminActive({ id: admin.id, isActive: !admin.isActive }).unwrap()
       toast.success(admin.isActive ? 'ডিঅ্যাক্টিভেট হয়েছে' : 'অ্যাক্টিভ হয়েছে')
-      await load()
     } catch (err) {
       toast.error(err.data?.message || 'আপডেট ব্যর্থ')
     }
@@ -427,7 +416,7 @@ export default function AdminsPage() {
               <p className="admin-owner-note">Owner রোলে সব অনুমতি স্বয়ংক্রিয়ভাবে থাকবে</p>
             )}
 
-            <button className="btn-red block" type="submit" disabled={isSubmitting}>
+            <button className="btn-red block" type="submit" disabled={creating}>
               তৈরি করুন
             </button>
           </form>
@@ -486,7 +475,7 @@ export default function AdminsPage() {
               <p className="admin-owner-note">Owner রোলে সব অনুমতি স্বয়ংক্রিয়ভাবে থাকবে</p>
             )}
 
-            <button className="btn-red block" type="submit" disabled={isEditSubmitting}>
+            <button className="btn-red block" type="submit" disabled={updating}>
               সেভ করুন
             </button>
           </form>

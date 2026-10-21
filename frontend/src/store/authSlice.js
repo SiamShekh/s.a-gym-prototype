@@ -1,5 +1,5 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { api } from '../api/client'
+import { createSlice } from '@reduxjs/toolkit'
+import { saApi } from '../api/saApi'
 import { DEFAULT_STAFF_PERMISSIONS } from '../lib/permissions'
 
 const STORAGE_KEY = 'sa_gym_session'
@@ -15,18 +15,6 @@ function readSession() {
 
 const saved = readSession()
 
-export const login = createAsyncThunk('auth/login', async ({ phone, password }, { rejectWithValue }) => {
-  const normalizedPhone = phone.replace(/[\s-]/g, '').trim()
-  try {
-    return await api('/auth/login', {
-      method: 'POST',
-      body: { phone: normalizedPhone, password },
-    })
-  } catch (err) {
-    return rejectWithValue({ status: err.status ?? 0, message: err.message })
-  }
-})
-
 function persist(state) {
   sessionStorage.setItem(
     STORAGE_KEY,
@@ -38,6 +26,16 @@ function persist(state) {
       permissions: state.permissions,
     }),
   )
+}
+
+function applyAdmin(state, admin, token) {
+  if (token) state.token = token
+  state.adminName = admin?.name || null
+  state.adminRole = admin?.role || 'owner'
+  state.adminId = admin?.id || null
+  state.permissions =
+    admin?.role === 'owner' ? null : admin?.permissions || DEFAULT_STAFF_PERMISSIONS
+  persist(state)
 }
 
 const authSlice = createSlice({
@@ -57,6 +55,7 @@ const authSlice = createSlice({
       state.adminRole = null
       state.adminId = null
       state.permissions = null
+      state.status = 'idle'
       sessionStorage.removeItem(STORAGE_KEY)
     },
     updateSessionProfile(state, action) {
@@ -68,22 +67,14 @@ const authSlice = createSlice({
   },
   extraReducers(builder) {
     builder
-      .addCase(login.pending, (state) => {
+      .addMatcher(saApi.endpoints.login.matchPending, (state) => {
         state.status = 'loading'
       })
-      .addCase(login.fulfilled, (state, action) => {
+      .addMatcher(saApi.endpoints.login.matchFulfilled, (state, action) => {
         state.status = 'idle'
-        state.token = action.payload.token
-        state.adminName = action.payload.admin?.name || null
-        state.adminRole = action.payload.admin?.role || 'owner'
-        state.adminId = action.payload.admin?.id || null
-        state.permissions =
-          action.payload.admin?.role === 'owner'
-            ? null
-            : action.payload.admin?.permissions || DEFAULT_STAFF_PERMISSIONS
-        persist(state)
+        applyAdmin(state, action.payload.admin, action.payload.token)
       })
-      .addCase(login.rejected, (state) => {
+      .addMatcher(saApi.endpoints.login.matchRejected, (state) => {
         state.status = 'idle'
       })
   },

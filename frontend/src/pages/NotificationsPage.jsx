@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
 import { toast } from 'sonner'
-import { api } from '../api/client'
+import { useGetNotificationHistoryQuery } from '../api/saApi'
 
 const STATUS_LABEL = {
   sent: 'পাঠানো',
@@ -27,29 +26,19 @@ function formatWhen(iso) {
 }
 
 export default function NotificationsPage() {
-  const token = useSelector((s) => s.auth.token)
-  const [logs, setLogs] = useState([])
-  const [pagination, setPagination] = useState(null)
   const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
-
-  const load = async (p = page) => {
-    setLoading(true)
-    try {
-      const h = await api(`/notifications/history?page=${p}&limit=30`, { token })
-      setLogs(h.logs || [])
-      setPagination(h.pagination || null)
-    } catch {
-      toast.error('নোটিফিকেশন লোড ব্যর্থ')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data, isLoading, isError, isFetching } = useGetNotificationHistoryQuery({
+    page,
+    limit: 30,
+  })
 
   useEffect(() => {
-    load(page)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, page])
+    if (isError) toast.error('নোটিফিকেশন লোড ব্যর্থ')
+  }, [isError])
+
+  const logs = data?.logs || []
+  const pagination = data?.pagination || null
+  const loading = isLoading || isFetching
 
   return (
     <div className="stack">

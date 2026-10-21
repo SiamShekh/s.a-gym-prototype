@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import ThemeToggle from '../components/ThemeToggle'
 import ProfileSheet from '../components/ProfileSheet'
+import { baseApi } from '../api/baseApi'
 import { logout } from '../store/authSlice'
 import { hasPermission } from '../lib/permissions'
 
@@ -126,6 +127,7 @@ export default function MorePage() {
         type="button"
         onClick={() => {
           dispatch(logout())
+          dispatch(baseApi.util.resetApiState())
           navigate('/login', { replace: true })
         }}
       >

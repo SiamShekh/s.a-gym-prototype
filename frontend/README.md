@@ -7,4 +7,6 @@ npm install
 npm run dev
 ```
 
-Uses React Router, Redux Toolkit, React Hook Form, and Sonner. API calls go to `/api` (Vite proxies to `http://localhost:4000`). Override with `VITE_API_URL`.
+Uses React Router, Redux Toolkit, React Hook Form, and Sonner. API calls go to `/api` (Vite proxies via `VITE_API_PROXY_TARGET`).
+
+**Production (separate static host):** set `VITE_API_URL=https://YOUR-API.up.railway.app/api` at build time. Missing this causes login `405` on the static domain.

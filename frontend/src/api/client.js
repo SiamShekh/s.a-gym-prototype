@@ -1,4 +1,5 @@
-const BASE = import.meta.env.VITE_API_URL || '/api'
+/** Dev: `/api` (Vite proxy). Prod (split hosts): full backend URL ending in `/api`. */
+const BASE = String(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
 export async function api(path, { method = 'GET', body, token } = {}) {
   const headers = { 'Content-Type': 'application/json' }

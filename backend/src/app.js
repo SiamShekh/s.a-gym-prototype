@@ -65,15 +65,20 @@ if (!serveSpa) {
   });
 }
 
-app.use('/api/health', healthRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/members', membersRoutes);
-app.use('/api/actions', actionsRoutes);
-app.use('/api/payments', paymentsRoutes);
-app.use('/api/expenses', expensesRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/admins', adminsRoutes);
-app.use('/api/notifications', notificationsRoutes);
+function mountApi(path, router) {
+  app.use(`/api${path}`, router);
+  app.use(path, router);
+}
+
+mountApi('/health', healthRoutes);
+mountApi('/auth', authRoutes);
+mountApi('/members', membersRoutes);
+mountApi('/actions', actionsRoutes);
+mountApi('/payments', paymentsRoutes);
+mountApi('/expenses', expensesRoutes);
+mountApi('/reports', reportsRoutes);
+mountApi('/admins', adminsRoutes);
+mountApi('/notifications', notificationsRoutes);
 
 if (serveSpa) {
   app.use(express.static(frontendDist, { index: false, maxAge: '1h' }));

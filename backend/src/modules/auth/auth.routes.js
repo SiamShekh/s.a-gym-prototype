@@ -7,6 +7,13 @@ import { loginSchema, updateProfileSchema } from './auth.validation.js';
 
 const router = Router();
 
+router.get('/login', (req, res) => {
+  res.status(405).json({
+    success: false,
+    message: 'Login is POST /api/auth/login with JSON { phone, password }',
+  });
+});
+
 router.post(
   '/login',
   validate(loginSchema),

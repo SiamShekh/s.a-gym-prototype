@@ -1,6 +1,13 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
-const rawBase = String(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
+function resolveApiBase() {
+  const raw = String(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
+  if (raw === '/api' || raw.endsWith('/api')) return raw
+  if (/^https?:\/\//i.test(raw)) return `${raw}/api`
+  return raw
+}
+
+const rawBase = resolveApiBase()
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: rawBase,

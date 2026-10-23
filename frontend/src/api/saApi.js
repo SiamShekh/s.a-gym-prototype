@@ -178,6 +178,12 @@ export const saApi = baseApi.injectEndpoints({
       invalidatesTags: ['Admins'],
     }),
 
+    getNotificationQueue: build.query({
+      query: () => '/notifications/queue',
+      providesTags: ['Notifications'],
+      transformResponse: (res) => res.queue,
+    }),
+
     getNotificationHistory: build.query({
       query: (params = {}) => ({
         url: '/notifications/history',
@@ -209,5 +215,6 @@ export const {
   useUpdateAdminMutation,
   useDeleteAdminMutation,
   useSetAdminActiveMutation,
+  useGetNotificationQueueQuery,
   useGetNotificationHistoryQuery,
 } = saApi

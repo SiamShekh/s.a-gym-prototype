@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'sonner'
-import { today } from '../lib/memberUtils'
+import { addDays, today } from '../lib/memberUtils'
 import { fetchActions } from '../store/actionsSlice'
 
 const PAGE_SIZE = 30
@@ -79,19 +79,10 @@ const TYPE_META = {
   },
 }
 
-function daysAgoIso(days) {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
 function rangeForPreset(key) {
   if (key === 'today') return { from: today(), to: today() }
-  if (key === '7d') return { from: daysAgoIso(6), to: today() }
-  if (key === '30d') return { from: daysAgoIso(29), to: today() }
+  if (key === '7d') return { from: addDays(today(), -6), to: today() }
+  if (key === '30d') return { from: addDays(today(), -29), to: today() }
   return { from: '', to: '' }
 }
 

@@ -1,24 +1,31 @@
-export function todayIso() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+const TZ = process.env.SMS_TZ || 'Asia/Dhaka';
+
+/** Calendar day in the gym timezone (Railway runs in UTC). */
+export function todayIso(date = new Date(), timeZone = TZ) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const get = (type) => parts.find((p) => p.type === type)?.value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
+/** Add days on the calendar date, independent of the server timezone. */
 export function addDaysIso(iso, days) {
-  const d = new Date(`${iso}T00:00:00`);
-  d.setDate(d.getDate() + days);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  const [y, m, d] = String(iso).split('-').map(Number);
+  if (!y || !m || !d) return iso;
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() + days);
+  const yy = date.getUTCFullYear();
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(date.getUTCDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
 }
 
 export function monthKey(d = new Date()) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  return `${y}-${m}`;
+  return todayIso(d).slice(0, 7);
 }
 
 export function monthRange(key) {
@@ -29,13 +36,14 @@ export function monthRange(key) {
   return { start, end };
 }
 
-export function lastNMonthKeys(n = 6) {
+export function lastNMonthKeys(n = 6, from = new Date()) {
+  const [y, m] = todayIso(from).split('-').map(Number);
   const keys = [];
-  const d = new Date();
-  d.setDate(1);
   for (let i = n - 1; i >= 0; i -= 1) {
-    const x = new Date(d.getFullYear(), d.getMonth() - i, 1);
-    keys.push(monthKey(x));
+    const date = new Date(Date.UTC(y, m - 1 - i, 1));
+    const yy = date.getUTCFullYear();
+    const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+    keys.push(`${yy}-${mm}`);
   }
   return keys;
 }

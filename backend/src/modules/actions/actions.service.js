@@ -71,12 +71,12 @@ function isIsoDay(value) {
 
 function parseDayStart(value) {
   if (!isIsoDay(value)) return null;
-  const d = new Date(`${value}T00:00:00`);
+  const d = new Date(`${value}T00:00:00+06:00`);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
 function parseDayEnd(value) {
   if (!isIsoDay(value)) return null;
-  const d = new Date(`${value}T23:59:59.999`);
+  const d = new Date(`${value}T23:59:59.999+06:00`);
   return Number.isNaN(d.getTime()) ? null : d;
 }

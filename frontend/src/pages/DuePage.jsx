@@ -16,6 +16,7 @@ import { hasPermission } from '../lib/permissions'
 export default function DuePage() {
   const dispatch = useDispatch()
   const list = useSelector((s) => s.members.list)
+  const pagination = useSelector((s) => s.members.pagination)
   const status = useSelector((s) => s.members.status)
   const adminRole = useSelector((s) => s.auth.adminRole)
   const permissions = useSelector((s) => s.auth.permissions)
@@ -23,7 +24,7 @@ export default function DuePage() {
   const [payId, setPayId] = useState(null)
 
   const loadDue = () =>
-    dispatch(fetchMembers({ status: 'unpaid', limit: 100 }))
+    dispatch(fetchMembers({ status: 'due', limit: 100 }))
       .unwrap()
       .catch(() => toast.error('ডেটা লোড ব্যর্থ'))
 
@@ -53,6 +54,11 @@ export default function DuePage() {
 
       {status === 'loading' && !list.length && <p className="empty">লোড হচ্ছে…</p>}
       {status !== 'loading' && !list.length && <p className="empty">কোনো বকেয়া সদস্য নেই</p>}
+      {pagination?.total > list.length && (
+        <p className="light" style={{ fontSize: 12, margin: 0 }}>
+          {list.length} জন দেখানো হচ্ছে, মোট {pagination.total}
+        </p>
+      )}
 
       <div className="card-grid">
         {list.map((m) => {

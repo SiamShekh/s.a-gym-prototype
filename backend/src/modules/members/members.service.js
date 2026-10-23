@@ -19,43 +19,51 @@ function withDerivedFields(data, existing = {}) {
 }
 
 async function nextMemberCode() {
-  const last = await Member.findOne({ code: { $exists: true, $ne: null } })
-    .sort({ code: -1 })
-    .select('code')
-    .lean();
-  let n = 1;
-  if (last?.code) {
-    const match = String(last.code).match(/(\d+)$/);
-    if (match) n = Number(match[1]) + 1;
-  }
+  const rows = await Member.aggregate([
+    { $match: { code: { $regex: /^SA-\d+$/ } } },
+    {
+      $project: {
+        n: { $convert: { input: { $substrCP: ['$code', 3, 12] }, to: 'int', onError: 0, onNull: 0 } },
+      },
+    },
+    { $group: { _id: null, max: { $max: '$n' } } },
+  ]);
+  const n = (rows[0]?.max || 0) + 1;
   return `SA-${String(n).padStart(4, '0')}`;
 }
 
 function buildListFilter({ q, status }) {
-  const filter = {};
+  const and = [];
   const query = String(q || '').trim();
   if (query) {
     const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    filter.$or = [
-      { name: { $regex: escaped, $options: 'i' } },
-      { phone: { $regex: escaped, $options: 'i' } },
-      { code: { $regex: escaped, $options: 'i' } },
-    ];
+    and.push({
+      $or: [
+        { name: { $regex: escaped, $options: 'i' } },
+        { phone: { $regex: escaped, $options: 'i' } },
+        { code: { $regex: escaped, $options: 'i' } },
+      ],
+    });
   }
 
   const today = todayIso();
   const in7 = addDaysIso(today, 7);
   if (status === 'expired') {
-    filter.expiry = { $lt: today };
+    and.push({ expiry: { $lt: today } });
   } else if (status === 'expiring') {
-    filter.expiry = { $gte: today, $lte: in7 };
+    and.push({ expiry: { $gte: today, $lte: in7 } });
   } else if (status === 'active') {
-    filter.expiry = { $gt: in7 };
+    and.push({ expiry: { $gt: in7 }, paid: { $ne: false } });
   } else if (status === 'unpaid') {
-    filter.paid = false;
+    and.push({ paid: false });
+  } else if (status === 'due') {
+    // Same set the dashboard counts as বকেয়া
+    and.push({ $or: [{ paid: false }, { expiry: { $lt: today } }] });
   }
 
-  return filter;
+  if (!and.length) return {};
+  if (and.length === 1) return and[0];
+  return { $and: and };
 }
 
 async function recordPayment({ member, amount, method, plan, admin, note = '' }) {

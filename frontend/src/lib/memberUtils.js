@@ -6,15 +6,15 @@ export const PLAN_LABELS = [
   "১২ মাস — ৳১০,০০০",
 ];
 
-function iso(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
 export function today() {
-  return iso(new Date());
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Dhaka",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const get = (type) => parts.find((p) => p.type === type)?.value;
+  return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
 export function formatDate(date) {
@@ -25,15 +25,19 @@ export function formatDate(date) {
 }
 
 export function daysLeft(expiry) {
-  const end = new Date(`${expiry}T00:00:00`);
-  const start = new Date(`${today()}T00:00:00`);
-  if (Number.isNaN(end.getTime())) return 0;
-  return Math.round((end.getTime() - start.getTime()) / 86400000);
+  const [ey, em, ed] = String(expiry || "").split("-").map(Number);
+  const [ty, tm, td] = today().split("-").map(Number);
+  if (!ey || !em || !ed || !ty || !tm || !td) return 0;
+  const end = Date.UTC(ey, em - 1, ed);
+  const start = Date.UTC(ty, tm - 1, td);
+  return Math.round((end - start) / 86400000);
 }
 
 export function statusOf(member) {
   const d = daysLeft(member.expiry);
   if (d < 0) return { label: "মেয়াদ শেষ", key: "expired", urgent: true };
+  if (member.paid === false)
+    return { label: "বকেয়া", key: "unpaid", urgent: true };
   if (d <= 3)
     return { label: `জরুরি! ${d} দিন`, key: "expiring", urgent: true };
   if (d <= 7) return { label: `${d} দিন বাকি`, key: "expiring", urgent: false };
@@ -69,11 +73,19 @@ export function planDays(plan) {
   return Number(String(plan).split(":")[0]) || 30;
 }
 
+export function addDays(isoDate, days) {
+  const [y, m, d] = String(isoDate || "").split("-").map(Number);
+  if (!y || !m || !d) return isoDate;
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() + days);
+  const yy = date.getUTCFullYear();
+  const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(date.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
 export function calcExpiry(join, plan) {
-  const date = new Date(`${join}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return join;
-  date.setDate(date.getDate() + planDays(plan));
-  return iso(date);
+  return addDays(join, planDays(plan));
 }
 
 export function money(amount) {

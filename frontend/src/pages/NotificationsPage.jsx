@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { useGetNotificationHistoryQuery } from '../api/saApi'
+import { useGetNotificationHistoryQuery, useGetNotificationQueueQuery } from '../api/saApi'
 
 const STATUS_LABEL = {
   sent: 'পাঠানো',
@@ -27,14 +27,19 @@ function formatWhen(iso) {
 
 export default function NotificationsPage() {
   const [page, setPage] = useState(1)
+  const {
+    data: queue,
+    isLoading: queueLoading,
+    isError: queueError,
+  } = useGetNotificationQueueQuery()
   const { data, isLoading, isError, isFetching } = useGetNotificationHistoryQuery({
     page,
     limit: 30,
   })
 
   useEffect(() => {
-    if (isError) toast.error('নোটিফিকেশন লোড ব্যর্থ')
-  }, [isError])
+    if (isError || queueError) toast.error('নোটিফিকেশন লোড ব্যর্থ')
+  }, [isError, queueError])
 
   const logs = data?.logs || []
   const pagination = data?.pagination || null
@@ -42,6 +47,28 @@ export default function NotificationsPage() {
 
   return (
     <div className="stack">
+      <section className="banner">
+        <strong>আজকের SMS কিউ</strong>
+        <p className="light" style={{ margin: '4px 0 0', fontSize: 12 }}>
+          {queueLoading && 'লোড হচ্ছে…'}
+          {queue && (
+            <>
+              {queue.dhakaDate} · মোট {queue.total} জন
+              {queue.skipToday ? ' · আজ পাঠানো বন্ধ (শুক্রবার)' : ''}
+              {queue.smsEnabled ? '' : ' · SMS বন্ধ (ড্রাই-রান)'}
+            </>
+          )}
+        </p>
+        {queue?.sections?.filter((s) => s.count > 0).map((s) => (
+          <p key={s.key} className="light" style={{ margin: '6px 0 0', fontSize: 13 }}>
+            {s.title}: {s.count}
+          </p>
+        ))}
+        {queue && queue.total === 0 && !queueLoading && (
+          <p className="light" style={{ margin: '6px 0 0', fontSize: 13 }}>আজ কাউকে পাঠানোর দরকার নেই</p>
+        )}
+      </section>
+
       <section>
         <div className="section-label">মেসেজ হিস্টোরি</div>
         {loading && !logs.length && <p className="empty">লোড হচ্ছে…</p>}

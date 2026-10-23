@@ -1,16 +1,24 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { saApi } from '../api/saApi'
 
+let fetchSeq = 0
+
 export const fetchMembers = createAsyncThunk(
   'members/fetch',
-  async (params = {}, { dispatch }) => {
-    const data = await dispatch(
-      saApi.endpoints.getMembers.initiate(params, { forceRefetch: true }),
-    ).unwrap()
-    return {
-      members: data.members,
-      pagination: data.pagination || null,
-      query: params,
+  async (params = {}, { dispatch, rejectWithValue }) => {
+    const seq = ++fetchSeq
+    try {
+      const data = await dispatch(
+        saApi.endpoints.getMembers.initiate(params, { forceRefetch: true }),
+      ).unwrap()
+      return {
+        members: data.members,
+        pagination: data.pagination || null,
+        query: params,
+        seq,
+      }
+    } catch (err) {
+      return rejectWithValue({ seq, message: err?.data?.message || 'failed' })
     }
   },
 )
@@ -84,12 +92,14 @@ const membersSlice = createSlice({
         state.status = 'loading'
       })
       .addCase(fetchMembers.fulfilled, (state, action) => {
+        if (action.payload.seq !== fetchSeq) return
         state.status = 'idle'
         state.list = action.payload.members
         state.pagination = action.payload.pagination
         state.query = action.payload.query || {}
       })
-      .addCase(fetchMembers.rejected, (state) => {
+      .addCase(fetchMembers.rejected, (state, action) => {
+        if (action.payload?.seq !== fetchSeq) return
         state.status = 'error'
       })
   },

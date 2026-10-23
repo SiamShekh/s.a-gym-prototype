@@ -1,7 +1,7 @@
 import Member from '../../models/Member.js';
 import SmsLog from '../../models/SmsLog.js';
 import config from '../../config/index.js';
-import { addDaysIso } from '../../utils/dates.js';
+import { addDaysIso, todayIso } from '../../utils/dates.js';
 import {
   BUCKET_META,
   SMS_BUCKETS,
@@ -13,10 +13,12 @@ import {
 import { sendViaSmsGateway } from '../sms/sms.gateway.js';
 
 function daysLeft(expiry, today = todayIso()) {
-  const end = new Date(`${expiry}T00:00:00`);
-  const start = new Date(`${today}T00:00:00`);
-  if (Number.isNaN(end.getTime())) return 0;
-  return Math.round((end.getTime() - start.getTime()) / 86400000);
+  const [ey, em, ed] = String(expiry || '').split('-').map(Number);
+  const [ty, tm, td] = String(today || '').split('-').map(Number);
+  if (!ey || !em || !ed || !ty || !tm || !td) return 0;
+  const end = Date.UTC(ey, em - 1, ed);
+  const start = Date.UTC(ty, tm - 1, td);
+  return Math.round((end - start) / 86400000);
 }
 
 function emptyGroups() {

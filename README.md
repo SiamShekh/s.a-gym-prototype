@@ -7,7 +7,7 @@ sa-manegement/
 ```
 
 ## Backend
-
+ 
 ```bash
 cd backend
 cp .env.example .env

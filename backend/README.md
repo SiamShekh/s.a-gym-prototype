@@ -23,7 +23,7 @@ Default seeded admin:
 - password: `123456`
 - role: `owner`
 
-## Scripts
+## Script 
 
 | Command | Description |
 |---------|-------------|

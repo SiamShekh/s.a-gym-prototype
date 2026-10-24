@@ -57,9 +57,11 @@ export default function NotificationsPage() {
         toast.error(result.message || 'আজ পাঠানো যায়নি')
         return
       }
-      const s = result.summary || {}
-      const sent = (s.sent || 0) + (s.dryRun || 0)
-      toast.success(`পাঠানো হয়েছে: ${sent} জন`)
+      const sent = result.summary?.sent || 0
+      const failed = result.summary?.results?.find((row) => row.status === 'failed')
+      if (sent > 0) toast.success(`SMS পাঠানো হয়েছে: ${sent} জন`)
+      else if (failed?.error) toast.error(failed.error)
+      else toast.error('কোনো নতুন SMS পাঠানো হয়নি')
     } catch (err) {
       toast.error(err?.data?.message || 'পাঠানো ব্যর্থ')
     }

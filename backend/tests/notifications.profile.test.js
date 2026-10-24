@@ -160,15 +160,11 @@ describe('Profile + notifications cron/history', () => {
     }
 
     expect(first.status).toBe(200);
-    expect(first.body.skipped).toBe(false);
-    expect(first.body.summary.sent + first.body.summary.dryRun).toBeGreaterThan(0);
-
-    const second = await request(app).post('/api/notifications/send-today').set(headers);
-    expect(second.status).toBe(409);
-    expect(second.body.alreadySent).toBe(true);
+    expect(first.body.skipped).toBe(true);
+    expect(first.body.reason).toBe('sms_disabled');
 
     const queue = await request(app).get('/api/notifications/queue').set(headers);
-    expect(queue.body.queue.alreadySentToday).toBe(true);
+    expect(queue.body.queue.alreadySentToday).toBe(false);
   });
 
   it('rejects cron without secret', async () => {

@@ -31,7 +31,7 @@ async function alreadySentStage(memberId, bucket, memberExpiry) {
     member: memberId,
     bucket,
     memberExpiry,
-    status: { $in: ['sent', 'dry_run'] },
+    status: { $in: config.smsEnabled ? ['sent'] : ['sent', 'dry_run'] },
   }).select('_id');
   return Boolean(found);
 }
@@ -40,17 +40,24 @@ async function cycleSendCount(memberId, memberExpiry) {
   return SmsLog.countDocuments({
     member: memberId,
     memberExpiry,
-    status: { $in: ['sent', 'dry_run'] },
+    status: 'sent',
+  });
+}
+
+function dhakaDayStart(dateKey) {
+  return new Date(`${dateKey}T00:00:00+06:00`);
+}
+
+async function realSentToday(dateKey) {
+  return SmsLog.countDocuments({
+    status: 'sent',
+    createdAt: { $gte: dhakaDayStart(dateKey) },
   });
 }
 
 async function todaySendCount() {
   const { dateKey } = getDhakaParts();
-  const start = new Date(`${dateKey}T00:00:00+06:00`);
-  return SmsLog.countDocuments({
-    status: { $in: ['sent', 'dry_run'] },
-    createdAt: { $gte: start },
-  });
+  return realSentToday(dateKey);
 }
 
 function toTarget(m, d, bucket) {
@@ -104,7 +111,7 @@ export const notificationsService = {
 
     const dhaka = getDhakaParts();
     const skipToday = config.smsSkipWeekdays.includes(dhaka.weekday);
-    const alreadySentToday = Boolean(await SmsDailyRun.exists({ dateKey: dhaka.dateKey }));
+    const alreadySentToday = (await realSentToday(dhaka.dateKey)) > 0;
 
     return {
       total: sections.reduce((s, g) => s + g.count, 0),
@@ -320,6 +327,29 @@ export const notificationsService = {
       };
     }
 
+    if (!config.smsEnabled) {
+      return {
+        skipped: true,
+        alreadySent: false,
+        reason: 'sms_disabled',
+        dhakaDate: dhaka.dateKey,
+        message: 'SMS বন্ধ। SMS_ENABLED=true এবং গেটওয়ে কী সেট না করলে মেসেজ যায় না।',
+      };
+    }
+
+    if ((await realSentToday(dhaka.dateKey)) > 0) {
+      return {
+        skipped: true,
+        alreadySent: true,
+        reason: 'already_sent_today',
+        dhakaDate: dhaka.dateKey,
+        message: 'আজ ইতিমধ্যে একবার পাঠানো হয়েছে',
+      };
+    }
+
+    // A dry-run earlier today must not block the real send.
+    await SmsDailyRun.deleteOne({ dateKey: dhaka.dateKey });
+
     try {
       await SmsDailyRun.create({
         dateKey: dhaka.dateKey,
@@ -344,6 +374,10 @@ export const notificationsService = {
       source: 'manual',
       buckets: SMS_BUCKETS,
     });
+
+    if (!summary.sent) {
+      await SmsDailyRun.deleteOne({ dateKey: dhaka.dateKey });
+    }
 
     return {
       skipped: false,

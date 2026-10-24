@@ -11,22 +11,24 @@ export async function sendViaSmsGateway({ recipient, message }) {
     return { ok: true, dryRun: true, providerRef: 'dry-run' };
   }
 
-  if (!config.smsClientId || !config.smsApiKey || !config.smsSenderId) {
-    const err = new Error('SMS gateway is not configured (CLIENT_ID / API_KEY / SENDER_ID)');
+  if (!config.smsClientId || !config.smsApiKey) {
+    const err = new Error('SMS gateway is not configured (CLIENT_ID / API_KEY)');
     err.statusCode = 503;
     throw err;
   }
 
+  const payload = {
+    client_id: config.smsClientId,
+    key: config.smsApiKey,
+    recipient,
+    message,
+  };
+  if (config.smsSenderId) payload.sender_id = config.smsSenderId;
+
   const res = await fetch(config.smsApiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      client_id: config.smsClientId,
-      key: config.smsApiKey,
-      sender_id: config.smsSenderId,
-      recipient,
-      message,
-    }),
+    body: JSON.stringify(payload),
   });
 
   const text = await res.text();

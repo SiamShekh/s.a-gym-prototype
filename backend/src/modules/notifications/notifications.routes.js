@@ -13,6 +13,10 @@ router.post(
 
 router.use(requireAuth, requirePermission('send_notifications'));
 
+router.post(
+  '/send-today',
+  asyncHandler((req, res) => notificationsController.sendToday(req, res))
+);
 router.get(
   '/queue',
   asyncHandler((req, res) => notificationsController.queue(req, res))

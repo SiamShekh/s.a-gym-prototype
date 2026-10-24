@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { useGetNotificationHistoryQuery, useGetNotificationQueueQuery } from '../api/saApi'
+import {
+  useGetNotificationHistoryQuery,
+  useGetNotificationQueueQuery,
+  useSendTodayNotificationsMutation,
+} from '../api/saApi'
 
 const STATUS_LABEL = {
   sent: 'পাঠানো',
@@ -32,6 +36,7 @@ export default function NotificationsPage() {
     isLoading: queueLoading,
     isError: queueError,
   } = useGetNotificationQueueQuery()
+  const [sendToday, { isLoading: sending }] = useSendTodayNotificationsMutation()
   const { data, isLoading, isError, isFetching } = useGetNotificationHistoryQuery({
     page,
     limit: 30,
@@ -40,6 +45,25 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (isError || queueError) toast.error('নোটিফিকেশন লোড ব্যর্থ')
   }, [isError, queueError])
+
+  const alreadySent = Boolean(queue?.alreadySentToday)
+  const skipToday = Boolean(queue?.skipToday)
+  const sendBlocked = alreadySent || skipToday || sending || queueLoading
+
+  const onSend = async () => {
+    try {
+      const result = await sendToday().unwrap()
+      if (result.skipped) {
+        toast.error(result.message || 'আজ পাঠানো যায়নি')
+        return
+      }
+      const s = result.summary || {}
+      const sent = (s.sent || 0) + (s.dryRun || 0)
+      toast.success(`পাঠানো হয়েছে: ${sent} জন`)
+    } catch (err) {
+      toast.error(err?.data?.message || 'পাঠানো ব্যর্থ')
+    }
+  }
 
   const logs = data?.logs || []
   const pagination = data?.pagination || null
@@ -67,6 +91,24 @@ export default function NotificationsPage() {
         {queue && queue.total === 0 && !queueLoading && (
           <p className="light" style={{ margin: '6px 0 0', fontSize: 13 }}>আজ কাউকে পাঠানোর দরকার নেই</p>
         )}
+        <button
+          className="btn-red"
+          type="button"
+          disabled={sendBlocked}
+          onClick={onSend}
+          style={{ marginTop: 12 }}
+        >
+          {sending
+            ? 'পাঠানো হচ্ছে…'
+            : alreadySent
+              ? 'আজ পাঠানো হয়েছে'
+              : skipToday
+                ? 'আজ পাঠানো বন্ধ'
+                : 'আজকের নোটিফিকেশন পাঠান'}
+        </button>
+        <p className="light" style={{ margin: '8px 0 0', fontSize: 12 }}>
+          দিনে একবার। ক্রনের মতো কিউতে থাকা সবাইকে পাঠাবে।
+        </p>
       </section>
 
       <section>

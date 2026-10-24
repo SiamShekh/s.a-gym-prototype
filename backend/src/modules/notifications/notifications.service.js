@@ -1,5 +1,6 @@
 import Member from '../../models/Member.js';
 import SmsLog from '../../models/SmsLog.js';
+import SmsDailyRun from '../../models/SmsDailyRun.js';
 import config from '../../config/index.js';
 import { addDaysIso, todayIso } from '../../utils/dates.js';
 import {
@@ -103,6 +104,7 @@ export const notificationsService = {
 
     const dhaka = getDhakaParts();
     const skipToday = config.smsSkipWeekdays.includes(dhaka.weekday);
+    const alreadySentToday = Boolean(await SmsDailyRun.exists({ dateKey: dhaka.dateKey }));
 
     return {
       total: sections.reduce((s, g) => s + g.count, 0),
@@ -113,6 +115,7 @@ export const notificationsService = {
       timezone: config.smsTimezone,
       dhakaDate: dhaka.dateKey,
       skipToday,
+      alreadySentToday,
       skipReason: skipToday ? 'friday_or_skip_weekday' : null,
       sections,
     };
@@ -302,6 +305,53 @@ export const notificationsService = {
     }
 
     return summary;
+  },
+
+  async runManual(admin) {
+    const dhaka = getDhakaParts();
+    if (config.smsSkipWeekdays.includes(dhaka.weekday)) {
+      return {
+        skipped: true,
+        alreadySent: false,
+        reason: 'skip_weekday',
+        weekday: dhaka.weekday,
+        dhakaDate: dhaka.dateKey,
+        message: 'আজ পাঠানো বন্ধ (শুক্রবার)',
+      };
+    }
+
+    try {
+      await SmsDailyRun.create({
+        dateKey: dhaka.dateKey,
+        admin: admin?._id || admin?.id || null,
+        adminName: admin?.name || 'Admin',
+      });
+    } catch (err) {
+      if (err?.code === 11000) {
+        return {
+          skipped: true,
+          alreadySent: true,
+          reason: 'already_sent_today',
+          dhakaDate: dhaka.dateKey,
+          message: 'আজ ইতিমধ্যে একবার পাঠানো হয়েছে',
+        };
+      }
+      throw err;
+    }
+
+    const summary = await this.send({
+      admin,
+      source: 'manual',
+      buckets: SMS_BUCKETS,
+    });
+
+    return {
+      skipped: false,
+      alreadySent: false,
+      dhakaDate: dhaka.dateKey,
+      timezone: config.smsTimezone,
+      summary,
+    };
   },
 
   async runCron() {

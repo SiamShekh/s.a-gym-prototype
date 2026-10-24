@@ -137,6 +137,40 @@ describe('Profile + notifications cron/history', () => {
     }
   });
 
+  it('lets an admin send the daily queue once', async () => {
+    const today = todayIso();
+    await Member.create({
+      name: 'Today End',
+      phone: '01730000021',
+      address: 'Dhaka',
+      join: addDaysIso(today, -20),
+      plan: '30:1000',
+      expiry: today,
+      amount: 1000,
+      paid: true,
+      code: 'SA-9201',
+    });
+
+    const friday = isFridayInDhaka();
+    const first = await request(app).post('/api/notifications/send-today').set(headers);
+    if (friday) {
+      expect(first.status).toBe(200);
+      expect(first.body.skipped).toBe(true);
+      return;
+    }
+
+    expect(first.status).toBe(200);
+    expect(first.body.skipped).toBe(false);
+    expect(first.body.summary.sent + first.body.summary.dryRun).toBeGreaterThan(0);
+
+    const second = await request(app).post('/api/notifications/send-today').set(headers);
+    expect(second.status).toBe(409);
+    expect(second.body.alreadySent).toBe(true);
+
+    const queue = await request(app).get('/api/notifications/queue').set(headers);
+    expect(queue.body.queue.alreadySentToday).toBe(true);
+  });
+
   it('rejects cron without secret', async () => {
     config.cronSecret = 'test-cron-secret';
     const res = await request(app).post('/api/notifications/cron');

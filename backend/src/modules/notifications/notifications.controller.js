@@ -19,6 +19,25 @@ export const notificationsController = {
     res.json({ success: true, ...result });
   },
 
+  async sendToday(req, res) {
+    const result = await notificationsService.runManual(req.admin);
+    if (result.alreadySent) {
+      return res.status(409).json({ success: false, ...result });
+    }
+
+    if (!result.skipped) {
+      const s = result.summary;
+      await actionsService.record({
+        admin: req.admin,
+        type: 'send_sms',
+        summary: `ম্যানুয়াল SMS: পাঠানো ${s.sent + s.dryRun}, ডুপ্লিকেট ${s.skippedDuplicate}, ব্যর্থ ${s.failed}`,
+        meta: { ...s, source: 'manual', dhakaDate: result.dhakaDate },
+      });
+    }
+
+    res.json({ success: true, ...result });
+  },
+
   async cron(req, res) {
     const secret = req.get('x-cron-secret') || req.query.secret;
     if (!config.cronSecret || secret !== config.cronSecret) {

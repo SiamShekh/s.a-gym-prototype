@@ -178,6 +178,14 @@ export const saApi = baseApi.injectEndpoints({
       invalidatesTags: ['Admins'],
     }),
 
+    sendTodayNotifications: build.mutation({
+      query: () => ({
+        url: '/notifications/send-today',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Notifications', 'Actions'],
+    }),
+
     getNotificationQueue: build.query({
       query: () => '/notifications/queue',
       providesTags: ['Notifications'],
@@ -215,6 +223,7 @@ export const {
   useUpdateAdminMutation,
   useDeleteAdminMutation,
   useSetAdminActiveMutation,
+  useSendTodayNotificationsMutation,
   useGetNotificationQueueQuery,
   useGetNotificationHistoryQuery,
 } = saApi

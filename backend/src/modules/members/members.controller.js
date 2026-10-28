@@ -3,12 +3,15 @@ import { actionsService } from '../actions/actions.service.js';
 
 export const membersController = {
   async list(req, res) {
-    const { page, limit, q, status } = req.query;
+    const { page, limit, q, status, from, to, dateBy } = req.query;
     const result = await membersService.list({
       page: page != null ? Number(page) : undefined,
       limit: limit != null ? Number(limit) : undefined,
       q,
       status,
+      from,
+      to,
+      dateBy,
     });
     res.json({ success: true, ...result });
   },

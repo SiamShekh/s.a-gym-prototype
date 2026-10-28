@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'sonner'
-import { addDays, today } from '../lib/memberUtils'
 import { fetchActions } from '../store/actionsSlice'
+import DateRangeFilter from '../components/DateRangeFilter'
+import { apiRange } from '../lib/dateRange'
+import { useDateRange } from '../lib/useDateRange'
 
 const PAGE_SIZE = 30
 
 const FILTERS = [
   ['all', 'সব'],
   ['accept_payment', 'পেমেন্ট'],
+  ['delete_payment', 'পেমেন্ট ডিলিট'],
   ['create_member', 'নতুন সদস্য'],
   ['update_member', 'আপডেট'],
   ['delete_member', 'ডিলিট'],
@@ -17,13 +20,6 @@ const FILTERS = [
   ['create_admin', 'অ্যাডমিন'],
   ['update_profile', 'প্রোফাইল'],
   ['login', 'লগইন'],
-]
-
-const DATE_PRESETS = [
-  ['all', 'সব তারিখ'],
-  ['today', 'আজ'],
-  ['7d', '৭ দিন'],
-  ['30d', '৩০ দিন'],
 ]
 
 const TYPE_META = {
@@ -67,6 +63,11 @@ const TYPE_META = {
     tone: 'delete',
     icon: 'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6',
   },
+  delete_payment: {
+    label: 'পেমেন্ট ডিলিট',
+    tone: 'delete',
+    icon: 'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6',
+  },
   send_sms: {
     label: 'SMS',
     tone: 'pay',
@@ -77,25 +78,6 @@ const TYPE_META = {
     tone: 'update',
     icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
   },
-}
-
-function rangeForPreset(key) {
-  if (key === 'today') return { from: today(), to: today() }
-  if (key === '7d') return { from: addDays(today(), -6), to: today() }
-  if (key === '30d') return { from: addDays(today(), -29), to: today() }
-  return { from: '', to: '' }
-}
-
-function activePreset(from, to) {
-  for (const [key] of DATE_PRESETS) {
-    if (key === 'all') {
-      if (!from && !to) return 'all'
-      continue
-    }
-    const range = rangeForPreset(key)
-    if (range.from === from && range.to === to) return key
-  }
-  return 'custom'
 }
 
 function formatWhen(iso) {
@@ -154,9 +136,15 @@ export default function ActionsPage() {
   const status = useSelector((s) => s.actions.status)
   const pagination = useSelector((s) => s.actions.pagination)
   const [type, setType] = useState('all')
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
   const [page, setPage] = useState(1)
+  const range = useDateRange({ defaultPreset: 'all' })
+  const { ready, from, to, preset } = range
+  const rangeKey = `${preset}|${from}|${to}`
+  const [pageRange, setPageRange] = useState(rangeKey)
+  if (pageRange !== rangeKey) {
+    setPageRange(rangeKey)
+    setPage(1)
+  }
 
   useEffect(() => {
     if (pagination && page > pagination.totalPages) {
@@ -165,10 +153,12 @@ export default function ActionsPage() {
   }, [pagination, page])
 
   useEffect(() => {
-    dispatch(fetchActions({ page, limit: PAGE_SIZE, type, from, to }))
+    if (!ready) return
+    const dates = apiRange({ ready, preset, from, to })
+    dispatch(fetchActions({ page, limit: PAGE_SIZE, type, from: dates.from, to: dates.to }))
       .unwrap()
       .catch(() => toast.error('অ্যাকশন লোড ব্যর্থ'))
-  }, [dispatch, page, type, from, to])
+  }, [dispatch, page, type, ready, from, to, preset])
 
   const groups = []
   for (const action of list) {
@@ -182,17 +172,9 @@ export default function ActionsPage() {
   const totalPages = pagination?.totalPages ?? 1
   const rangeFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
   const rangeTo = Math.min(page * PAGE_SIZE, total)
-  const datePreset = activePreset(from, to)
-
-  const applyPreset = (key) => {
-    const range = rangeForPreset(key)
-    setFrom(range.from)
-    setTo(range.to)
-    setPage(1)
-  }
-
   return (
     <div className="stack">
+      <DateRangeFilter range={range} />
       <div className="pills">
         {FILTERS.map(([key, label]) => (
           <button
@@ -207,57 +189,6 @@ export default function ActionsPage() {
             {label}
           </button>
         ))}
-      </div>
-
-      <div className="pills">
-        {DATE_PRESETS.map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            className={`pill${datePreset === key ? ' active' : ''}`}
-            onClick={() => applyPreset(key)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="date-filters">
-        <label className="date-filter">
-          <span>থেকে</span>
-          <input
-            className="field"
-            type="date"
-            value={from}
-            max={to || undefined}
-            onChange={(e) => {
-              setFrom(e.target.value)
-              setPage(1)
-            }}
-          />
-        </label>
-        <label className="date-filter">
-          <span>পর্যন্ত</span>
-          <input
-            className="field"
-            type="date"
-            value={to}
-            min={from || undefined}
-            onChange={(e) => {
-              setTo(e.target.value)
-              setPage(1)
-            }}
-          />
-        </label>
-        {(from || to) && (
-          <button
-            className="btn-ghost"
-            type="button"
-            onClick={() => applyPreset('all')}
-          >
-            মুছুন
-          </button>
-        )}
       </div>
 
       <div className="page-meta">

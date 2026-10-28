@@ -12,6 +12,9 @@ import {
 import { fetchMembers } from '../store/membersSlice'
 import PaymentSheet from '../components/PaymentSheet'
 import { hasPermission } from '../lib/permissions'
+import DateRangeFilter from '../components/DateRangeFilter'
+import { apiRange } from '../lib/dateRange'
+import { useDateRange } from '../lib/useDateRange'
 
 export default function DuePage() {
   const dispatch = useDispatch()
@@ -22,16 +25,22 @@ export default function DuePage() {
   const permissions = useSelector((s) => s.auth.permissions)
   const canPay = hasPermission(adminRole, permissions, 'accept_payment')
   const [payId, setPayId] = useState(null)
-
-  const loadDue = () =>
-    dispatch(fetchMembers({ status: 'due', limit: 100 }))
-      .unwrap()
-      .catch(() => toast.error('ডেটা লোড ব্যর্থ'))
+  const range = useDateRange({ defaultPreset: 'all' })
+  const { ready, from, to, preset, dateBy } = range
 
   useEffect(() => {
-    loadDue()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch])
+    if (!ready) return
+    const dates = apiRange({ ready, preset, from, to })
+    dispatch(fetchMembers({
+      status: 'due',
+      limit: 100,
+      from: dates.from,
+      to: dates.to,
+      dateBy,
+    }))
+      .unwrap()
+      .catch(() => toast.error('ডেটা লোড ব্যর্থ'))
+  }, [dispatch, ready, from, to, preset, dateBy])
 
   const remind = (m) => {
     const d = daysLeft(m.expiry)
@@ -45,6 +54,7 @@ export default function DuePage() {
 
   return (
     <div className="stack">
+      <DateRangeFilter range={range} dateBasis />
       <section className="banner">
         <strong>বকেয়া সদস্য</strong>
         <p className="light" style={{ margin: '4px 0 0', fontSize: 12 }}>
@@ -99,7 +109,14 @@ export default function DuePage() {
           memberId={payId}
           onClose={() => {
             setPayId(null)
-            loadDue()
+            const dates = apiRange({ ready, preset, from, to })
+            dispatch(fetchMembers({
+              status: 'due',
+              limit: 100,
+              from: dates.from,
+              to: dates.to,
+              dateBy,
+            }))
           }}
         />
       )}

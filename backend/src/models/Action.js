@@ -6,6 +6,7 @@ export const ACTION_TYPES = [
   'update_member',
   'delete_member',
   'accept_payment',
+  'delete_payment',
   'create_admin',
   'create_expense',
   'delete_expense',

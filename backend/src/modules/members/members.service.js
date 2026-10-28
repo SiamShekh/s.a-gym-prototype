@@ -1,7 +1,8 @@
 import Member from '../../models/Member.js';
 import Payment from '../../models/Payment.js';
+import { activePaymentMatch } from '../payments/payments.service.js';
 import { calcExpiry, planAmount } from '../../utils/plans.js';
-import { addDaysIso, todayIso } from '../../utils/dates.js';
+import { addDaysIso, isIsoDay, todayIso } from '../../utils/dates.js';
 
 function withDerivedFields(data, existing = {}) {
   const join = data.join ?? existing.join;
@@ -32,7 +33,7 @@ async function nextMemberCode() {
   return `SA-${String(n).padStart(4, '0')}`;
 }
 
-function buildListFilter({ q, status }) {
+async function buildListFilter({ q, status, from, to, dateBy }) {
   const and = [];
   const query = String(q || '').trim();
   if (query) {
@@ -61,12 +62,31 @@ function buildListFilter({ q, status }) {
     and.push({ $or: [{ paid: false }, { expiry: { $lt: today } }] });
   }
 
+  const start = isIsoDay(from) ? from : '';
+  const end = isIsoDay(to) ? to : '';
+  if (start || end) {
+    const bounds = {};
+    if (start) bounds.$gte = start;
+    if (end) bounds.$lte = end;
+    if (bounds.$gte && bounds.$lte && bounds.$gte > bounds.$lte) {
+      const swap = bounds.$gte;
+      bounds.$gte = bounds.$lte;
+      bounds.$lte = swap;
+    }
+    if (dateBy === 'payment') {
+      const ids = await Payment.distinct('member', activePaymentMatch({ paidAt: bounds }));
+      and.push({ _id: { $in: ids } });
+    } else {
+      and.push({ join: bounds });
+    }
+  }
+
   if (!and.length) return {};
   if (and.length === 1) return and[0];
   return { $and: and };
 }
 
-async function recordPayment({ member, amount, method, plan, admin, note = '' }) {
+async function recordPayment({ member, amount, method, plan, admin, note = '', prior = null }) {
   const adminId = admin?._id || admin?.id;
   if (!adminId) return null;
   return Payment.create({
@@ -81,12 +101,21 @@ async function recordPayment({ member, amount, method, plan, admin, note = '' })
     adminName: admin.name || 'Admin',
     paidAt: todayIso(),
     note,
+    prior: prior
+      ? {
+          join: prior.join || '',
+          plan: prior.plan || '',
+          expiry: prior.expiry || '',
+          amount: prior.amount ?? 0,
+          paid: prior.paid !== false,
+        }
+      : undefined,
   });
 }
 
 export const membersService = {
   async list(options = {}) {
-    const filter = buildListFilter(options);
+    const filter = await buildListFilter(options);
     const sort = { createdAt: -1 };
     const paginate = options.page != null || options.limit != null;
 
@@ -189,6 +218,13 @@ export const membersService = {
       throw err;
     }
 
+    const prior = {
+      join: existing.join,
+      plan: existing.plan,
+      expiry: existing.expiry,
+      amount: existing.amount,
+      paid: existing.paid !== false,
+    };
     const join = todayIso();
     const paidAmount = Number(amount);
     if (!Number.isFinite(paidAmount) || paidAmount <= 0) {
@@ -215,6 +251,7 @@ export const membersService = {
         method: method || 'cash',
         plan,
         admin,
+        prior,
       });
     }
 

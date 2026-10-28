@@ -32,7 +32,10 @@ export const saApi = baseApi.injectEndpoints({
     }),
 
     getOverview: build.query({
-      query: () => '/reports/overview',
+      query: (params = {}) => ({
+        url: '/reports/overview',
+        params: cleanParams(params),
+      }),
       providesTags: ['Reports'],
       transformResponse: (res) => res.report,
     }),
@@ -110,6 +113,14 @@ export const saApi = baseApi.injectEndpoints({
         params: cleanParams(params),
       }),
       providesTags: ['Payments'],
+    }),
+
+    deletePayment: build.mutation({
+      query: (id) => ({
+        url: `/payments/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Payments', 'Reports', 'Members', 'Actions'],
     }),
 
     getExpenses: build.query({
@@ -215,6 +226,7 @@ export const {
   useGetActionsQuery,
   useLazyGetActionsQuery,
   useGetPaymentsQuery,
+  useDeletePaymentMutation,
   useGetExpensesQuery,
   useCreateExpenseMutation,
   useDeleteExpenseMutation,

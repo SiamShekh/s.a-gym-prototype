@@ -8,6 +8,9 @@ import {
   useDeleteExpenseMutation,
   useGetExpensesQuery,
 } from '../api/saApi'
+import DateRangeFilter from '../components/DateRangeFilter'
+import { apiRange } from '../lib/dateRange'
+import { useDateRange } from '../lib/useDateRange'
 
 const CATEGORIES = [
   ['rent', 'ভাড়া'],
@@ -29,7 +32,21 @@ function formatWhen(iso) {
 export default function ExpensesPage() {
   const [page, setPage] = useState(1)
   const [open, setOpen] = useState(false)
-  const { data, isLoading, isError, isFetching } = useGetExpensesQuery({ page, limit: 30 })
+  const range = useDateRange({ defaultPreset: 'all' })
+  const { ready, from, to, preset } = range
+  const rangeKey = `${preset}|${from}|${to}`
+  const [pageRange, setPageRange] = useState(rangeKey)
+  if (pageRange !== rangeKey) {
+    setPageRange(rangeKey)
+    setPage(1)
+  }
+  const dates = apiRange({ ready, preset, from, to })
+  const { data, isLoading, isError, isFetching } = useGetExpensesQuery({
+    page,
+    limit: 30,
+    from: dates.from,
+    to: dates.to,
+  }, { skip: !ready })
   const [createExpense] = useCreateExpenseMutation()
   const [deleteExpense] = useDeleteExpenseMutation()
 
@@ -86,6 +103,7 @@ export default function ExpensesPage() {
 
   return (
     <div className="stack">
+      <DateRangeFilter range={range} />
       <section className="actions-hero">
         <div>
           <div className="actions-hero-kicker">Expenses</div>

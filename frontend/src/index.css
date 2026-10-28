@@ -238,6 +238,18 @@ a { color: inherit; }
   align-items: flex-end;
   gap: 8px;
 }
+.chart.chart-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.chart.chart-scroll .bar-col { min-width: 42px; flex: 0 0 42px; }
+.range-filter { display: flex; flex-direction: column; gap: 10px; }
+.range-banner {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-60);
+}
 .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
 .bar-val { font-size: 10px; color: var(--fg-60); margin-bottom: 4px; }
 .bar { width: 100%; background: var(--color-primary); border-radius: 4px 4px 0 0; min-height: 8px; }

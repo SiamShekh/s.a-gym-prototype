@@ -12,6 +12,9 @@ import MemberFormSheet from '../components/MemberFormSheet'
 import Overlay from '../components/Overlay'
 import PaymentSheet from '../components/PaymentSheet'
 import { hasPermission } from '../lib/permissions'
+import DateRangeFilter from '../components/DateRangeFilter'
+import { apiRange } from '../lib/dateRange'
+import { useDateRange } from '../lib/useDateRange'
 
 const PAGE_SIZE = 20
 
@@ -51,6 +54,14 @@ export default function MembersPage() {
   const [editId, setEditId] = useState(null)
   const [payId, setPayId] = useState(null)
   const [pendingDelete, setPendingDelete] = useState(null)
+  const range = useDateRange({ defaultPreset: 'all' })
+  const { ready, from, to, preset, dateBy } = range
+  const rangeKey = `${preset}|${from}|${to}|${dateBy}`
+  const [pageRange, setPageRange] = useState(rangeKey)
+  if (pageRange !== rangeKey) {
+    setPageRange(rangeKey)
+    setPage(1)
+  }
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -67,22 +78,27 @@ export default function MembersPage() {
   }, [pagination, page])
 
   useEffect(() => {
+    if (!ready) return
+    const dates = apiRange({ ready, preset, from, to })
     dispatch(
       fetchMembers({
         page,
         limit: PAGE_SIZE,
         q: debouncedQuery,
         status: filter,
+        from: dates.from,
+        to: dates.to,
+        dateBy,
       }),
     )
       .unwrap()
       .catch(() => toast.error('ডেটা লোড ব্যর্থ'))
-  }, [dispatch, page, debouncedQuery, filter])
+  }, [dispatch, page, debouncedQuery, filter, ready, from, to, preset, dateBy])
 
   const total = pagination?.total ?? list.length
   const totalPages = pagination?.totalPages ?? 1
-  const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
-  const to = Math.min(page * PAGE_SIZE, total)
+  const rowFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const rowTo = Math.min(page * PAGE_SIZE, total)
 
   const confirmDelete = async () => {
     const member = pendingDelete
@@ -97,6 +113,7 @@ export default function MembersPage() {
 
   return (
     <>
+      <DateRangeFilter range={range} dateBasis />
       <div className="pills">
         {FILTERS.map(([key, label]) => (
           <button
@@ -127,7 +144,7 @@ export default function MembersPage() {
 
       <div className="page-meta">
         <span className="light">
-          {total === 0 ? 'কোনো সদস্য নেই' : `${from}–${to} / মোট ${total} জন`}
+          {total === 0 ? 'কোনো সদস্য নেই' : `${rowFrom}–${rowTo} / মোট ${total} জন`}
         </span>
         {status === 'loading' && <span className="light">লোড হচ্ছে…</span>}
       </div>

@@ -37,6 +37,20 @@ const paymentSchema = new mongoose.Schema(
       index: true,
     },
     note: { type: String, trim: true, default: '' },
+    /** Member fields immediately before this payment was applied. */
+    prior: {
+      join: { type: String, default: '' },
+      plan: { type: String, default: '' },
+      expiry: { type: String, default: '' },
+      amount: { type: Number, default: 0 },
+      paid: { type: Boolean, default: true },
+    },
+    deletedAt: { type: Date, default: null, index: true },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Admin',
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -51,6 +65,10 @@ const paymentSchema = new mongoose.Schema(
         if (ret.admin && typeof ret.admin === 'object' && ret.admin.toString) {
           ret.admin = ret.admin.toString();
         }
+        if (ret.deletedBy && typeof ret.deletedBy === 'object' && ret.deletedBy.toString) {
+          ret.deletedBy = ret.deletedBy.toString();
+        }
+        delete ret.prior;
         return ret;
       },
     },

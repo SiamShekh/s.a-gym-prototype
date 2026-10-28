@@ -43,7 +43,7 @@ const apiDocs = {
     members: 'GET|POST /api/members (auth)',
     memberById: 'GET|PUT|DELETE /api/members/:id (auth)',
     memberPay: 'POST /api/members/:id/pay (auth)',
-    payments: 'GET /api/payments (auth)',
+    payments: 'GET /api/payments (auth) · DELETE /api/payments/:id (owner)',
     expenses: 'GET|POST|DELETE /api/expenses (auth)',
     reports: 'GET /api/reports/overview (auth)',
     admins: 'GET|POST /api/admins (owner)',

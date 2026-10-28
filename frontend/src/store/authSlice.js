@@ -4,10 +4,27 @@ import { DEFAULT_STAFF_PERMISSIONS } from '../lib/permissions'
 
 const STORAGE_KEY = 'sa_gym_session'
 
+function readRaw() {
+  try {
+    return localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+/** localStorage so the session survives closing the tab. Older builds used sessionStorage. */
 function readSession() {
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
+    const raw = readRaw()
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    try {
+      if (!localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, raw)
+      sessionStorage.removeItem(STORAGE_KEY)
+    } catch {
+      /* storage may be blocked; keep the in-memory session */
+    }
+    return parsed
   } catch {
     return null
   }
@@ -16,16 +33,32 @@ function readSession() {
 const saved = readSession()
 
 function persist(state) {
-  sessionStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({
-      token: state.token,
-      adminName: state.adminName,
-      adminRole: state.adminRole,
-      adminId: state.adminId,
-      permissions: state.permissions,
-    }),
-  )
+  const raw = JSON.stringify({
+    token: state.token,
+    adminName: state.adminName,
+    adminRole: state.adminRole,
+    adminId: state.adminId,
+    permissions: state.permissions,
+  })
+  try {
+    localStorage.setItem(STORAGE_KEY, raw)
+    sessionStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* ignore quota / private-mode failures */
+  }
+}
+
+function clearStoredSession() {
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* ignore */
+  }
+  try {
+    sessionStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* ignore */
+  }
 }
 
 function applyAdmin(state, admin, token) {
@@ -56,7 +89,7 @@ const authSlice = createSlice({
       state.adminId = null
       state.permissions = null
       state.status = 'idle'
-      sessionStorage.removeItem(STORAGE_KEY)
+      clearStoredSession()
     },
     updateSessionProfile(state, action) {
       if (action.payload.adminName != null) {

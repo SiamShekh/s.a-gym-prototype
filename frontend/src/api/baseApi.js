@@ -18,9 +18,20 @@ const rawBaseQuery = fetchBaseQuery({
   },
 })
 
+function isLoginRequest(args) {
+  const url = typeof args === 'string' ? args : args?.url || ''
+  return String(url).includes('/auth/login')
+}
+
 /** Detect static-host HTML / 405 so callers get a clear error. */
 async function baseQuery(args, api, extraOptions) {
   const result = await rawBaseQuery(args, api, extraOptions)
+  if (result.error?.status === 401 && !isLoginRequest(args)) {
+    api.dispatch({ type: 'auth/logout' })
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.location.assign('/login')
+    }
+  }
   if (result.error) {
     const status = result.error.status
     const data = result.error.data

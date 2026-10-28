@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import jwt from 'jsonwebtoken';
 import { app, request, createAdmin, loginAs } from './helpers.js';
+
+const THIRTY_DAYS_SEC = 30 * 24 * 60 * 60;
 
 describe('POST /api/auth/login', () => {
   it('rejects invalid payload with Yup errors', async () => {
@@ -44,6 +47,17 @@ describe('POST /api/auth/login', () => {
     expect(res.body.admin.email).toBeUndefined();
     expect(res.body.admin.password).toBeUndefined();
     expect(res.body.admin.id).toEqual(expect.any(String));
+
+    const decoded = jwt.decode(res.body.token);
+    expect(decoded.exp - decoded.iat).toBe(THIRTY_DAYS_SEC);
+  });
+
+  it('keeps the JWT valid for 30 days', async () => {
+    await createAdmin({ phone: '01733333333' });
+    const res = await loginAs('01733333333', 'secret123');
+    const decoded = jwt.decode(res.body.token);
+    expect(res.status).toBe(200);
+    expect(decoded.exp).toBe(decoded.iat + THIRTY_DAYS_SEC);
   });
 
   it('supports multiple admins in the database', async () => {

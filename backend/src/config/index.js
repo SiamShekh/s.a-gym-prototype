@@ -8,7 +8,7 @@ const config = {
   corsOrigin: process.env.CORS_ORIGIN || '*',
   mongoUri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/sa-gym',
   jwtSecret: process.env.JWT_SECRET || 'dev-jwt-secret-change-me',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '30d',
   gymPhone: process.env.GYM_PHONE || process.env.SEED_ADMIN_PHONE || '01746933966',
   // SMS Gateway BD — https://app.smsgatewaybd.com/api / https://api.smsgateway.com.bd
   smsApiUrl:

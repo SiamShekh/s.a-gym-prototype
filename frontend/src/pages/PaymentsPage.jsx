@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { toast } from 'sonner'
 import { money, planLabel } from '../lib/memberUtils'
-import { useGetPaymentsQuery } from '../api/saApi'
+import { useDeletePaymentMutation, useGetPaymentsQuery } from '../api/saApi'
+import DateRangeFilter from '../components/DateRangeFilter'
+import Overlay from '../components/Overlay'
+import { apiRange } from '../lib/dateRange'
+import { useDateRange } from '../lib/useDateRange'
 
 const METHODS = [
   ['all', 'সব'],
@@ -20,15 +25,40 @@ function formatWhen(iso) {
 export default function PaymentsPage() {
   const [method, setMethod] = useState('all')
   const [page, setPage] = useState(1)
+  const [pendingDelete, setPendingDelete] = useState(null)
+  const range = useDateRange({ defaultPreset: 'all' })
+  const { ready, from, to, preset } = range
+  const rangeKey = `${preset}|${from}|${to}`
+  const [pageRange, setPageRange] = useState(rangeKey)
+  if (pageRange !== rangeKey) {
+    setPageRange(rangeKey)
+    setPage(1)
+  }
+  const isOwner = useSelector((s) => s.auth.adminRole) === 'owner'
+  const dates = apiRange({ ready, preset, from, to })
   const { data, isLoading, isError, isFetching } = useGetPaymentsQuery({
     page,
     limit: 30,
     method,
-  })
+    from: dates.from,
+    to: dates.to,
+  }, { skip: !ready })
+  const [deletePayment, { isLoading: deleting }] = useDeletePaymentMutation()
 
   useEffect(() => {
     if (isError) toast.error('পেমেন্ট লোড ব্যর্থ')
   }, [isError])
+
+  const confirmDelete = async () => {
+    const payment = pendingDelete
+    setPendingDelete(null)
+    try {
+      await deletePayment(payment.id).unwrap()
+      toast.success('পেমেন্ট মুছে ফেলা হয়েছে')
+    } catch {
+      toast.error('পেমেন্ট মুছতে ব্যর্থ')
+    }
+  }
 
   const rows = data?.payments || []
   const totalAmount = data?.totalAmount || 0
@@ -37,6 +67,7 @@ export default function PaymentsPage() {
 
   return (
     <div className="stack">
+      <DateRangeFilter range={range} />
       <section className="actions-hero">
         <div>
           <div className="actions-hero-kicker">Payments</div>
@@ -88,6 +119,13 @@ export default function PaymentsPage() {
               {p.adminName ? ` · ${p.adminName}` : ''}
               {p.note ? `\n${p.note}` : ''}
             </div>
+            {isOwner && (
+              <div className="actions">
+                <button className="btn-danger" type="button" onClick={() => setPendingDelete(p)}>
+                  মুছুন
+                </button>
+              </div>
+            )}
           </article>
         ))}
       </div>
@@ -107,6 +145,22 @@ export default function PaymentsPage() {
             পরে
           </button>
         </div>
+      )}
+
+      {pendingDelete && (
+        <Overlay onClose={() => setPendingDelete(null)}>
+          <div className="dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>পেমেন্ট মুছবেন?</h3>
+            <p>
+              {pendingDelete.memberName}-এর {money(pendingDelete.amount)} পেমেন্ট মুছে ফেলবেন?
+              সদস্যের বকেয়া ও মেয়াদ আবার হিসাব হবে।
+            </p>
+            <div className="actions">
+              <button className="btn-ghost" type="button" onClick={() => setPendingDelete(null)}>না</button>
+              <button className="btn-danger" type="button" disabled={deleting} onClick={confirmDelete}>হ্যাঁ, মুছুন</button>
+            </div>
+          </div>
+        </Overlay>
       )}
     </div>
   )
